@@ -21,7 +21,7 @@ export default function Login(props){
         try {
             await signInWithEmailAndPassword(auth, email, password)
             Alert.alert("Iniciando sesion", "Accediendo...")
-            props.navigation.navigate('Home')
+            props.navigation.navigate('barraNavegacion')
         } catch (error) {
             console.log(error)
             Alert.alert("Error", "El usuario o la contraseña son incorrectos")
