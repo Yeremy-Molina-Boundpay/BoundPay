@@ -6,6 +6,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
 import Home from './screens/Home';
+import BarraNavegacion from './barraNavegacion';
+
+
 
 export default function App() {
 
@@ -16,14 +19,14 @@ function MyStack() {
     <Stack.Navigator>
       <Stack.Screen name="Login" component={Login}
       options={{
-        title:"LOGIN",
+        title:"Inicio De Sesion",
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
       }} />
-      <Stack.Screen name="Home" component={Home}
+      <Stack.Screen name="barraNavegacion" component={BarraNavegacion}/*se cambio el redireccinamineto, ahora lleva a la barra de navegacion y esta permite ver todas las pantallas */
       options={{
-        title:"HOME",
+        title:"Boundpay",
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
