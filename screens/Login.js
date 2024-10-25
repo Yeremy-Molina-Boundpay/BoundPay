@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { Text, StyleSheet, View, Image, TextInput, TouchableOpacity, Alert } from "react-native";
-
+import { auth } from "../credenciales";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import appFirebase from '../credenciales'
-import { signInWithEmailAndPassword, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import {  signInWithEmailAndPassword, initializeAuth, getReactNativePersistence } from "firebase/auth";
 
 
 //Inicializar firebase auth con persistencia
-const auth = initializeAuth(appFirebase,{
-    persistence: getReactNativePersistence(AsyncStorage),
-})
+
 
 export default function Login(props){
+    
 
     //Crear la variable de estado
     const [email, setEmail] = useState()
@@ -28,6 +27,17 @@ export default function Login(props){
         }
     }
 
+    const registro=()=>{
+        try{
+
+            props.navigation.navigate('Registro')
+
+        }catch(error){
+            console.log(error)
+            Alert.alert("Error", "El usuario o la contraseña son incorrectos")
+        }
+
+    }
         return(
             <View style={styles.padre}>
                 
@@ -52,6 +62,14 @@ export default function Login(props){
                             <Text style={styles.textoBoton}>Ingresar</Text>
                         </TouchableOpacity>
                     </View>
+
+                    <View style={styles.container}>
+                        <Text>¿No tienes una cuenta? </Text>
+                        <TouchableOpacity onPress={() => props.navigation.navigate('Registro')}>
+                            <Text style={styles.link}>Regístrate aquí</Text>
+                        </TouchableOpacity>
+                    </View>
+
                 </View>
             </View>
         );
@@ -101,8 +119,18 @@ const styles = StyleSheet.create({
         width:150,
         marginTop:20
     },
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 30
+    },
+    link: {
+        color: '#525FE1', 
+        textDecorationLine: 'underline',
+    },
     textoBoton:{
         textAlign:'center',
         color:'white'
+        
     }
 });
