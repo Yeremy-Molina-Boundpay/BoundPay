@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, StyleSheet, View, Image, TextInput, TouchableOpacity, Alert } from "react-native";
+import { Text, StyleSheet, View, Image,ToastAndroid, TextInput, TouchableOpacity, Alert } from "react-native";
 import { auth } from "../credenciales";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import appFirebase from '../credenciales'
@@ -19,7 +19,7 @@ export default function Login(props){
     const login = async()=>{
         try {
             await signInWithEmailAndPassword(auth, email, password)
-            Alert.alert("Iniciando sesion", "Accediendo...")
+            ToastAndroid.show('Sesion iniciada correctamente.', ToastAndroid.SHORT);
             props.navigation.navigate('barraNavegacion')
         } catch (error) {
             console.log(error)
