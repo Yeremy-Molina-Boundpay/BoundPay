@@ -6,7 +6,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../credenciales";
 
 export default function Registro(props) {
-    // Crear variables de estado
+    
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
