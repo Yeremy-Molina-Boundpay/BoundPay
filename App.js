@@ -5,7 +5,7 @@ import 'react-native-gesture-handler';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
-import Home from './screens/Home';
+import Registro from './screens/registro';
 import BarraNavegacion from './barraNavegacion';
 
 
@@ -19,7 +19,14 @@ function MyStack() {
     <Stack.Navigator>
       <Stack.Screen name="Login" component={Login}
       options={{
-        title:"Inicio De Sesion",
+        title:"Inicio de sesion",
+        headerTintColor:"white",
+        headerTitleAlign:'center',
+        headerStyle: { backgroundColor: "#525FE1" },
+      }} />
+      <Stack.Screen name="Registro" component={Registro}
+      options={{
+        title:"Registro de usuario",
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
