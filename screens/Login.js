@@ -3,7 +3,7 @@ import { Text, StyleSheet, View, Image,ToastAndroid, TextInput, TouchableOpacity
 import { auth } from "../credenciales";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import appFirebase from '../credenciales'
-import {  signInWithEmailAndPassword, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import {  signInWithEmailAndPassword,sendEmailVerification, initializeAuth, getReactNativePersistence } from "firebase/auth";
 
 
 //Inicializar firebase auth con persistencia
@@ -47,12 +47,12 @@ export default function Login(props){
 
                 <View style={styles.tarjeta}>
                     <View style={styles.cajaTexto}>
-                        <TextInput placeholder="correo@gmail.com" style={{paddingHorizontal:15}}
+                        <TextInput placeholder="Correo@gmail.com" style={{paddingHorizontal:15}}
                         onChangeText={(text)=>setEmail(text)} />
                     </View>
 
                     <View style={styles.cajaTexto}>
-                        <TextInput placeholder="contraseña" style={{paddingHorizontal:15}}
+                        <TextInput placeholder="Contraseña" style={{paddingHorizontal:15}}
                         onChangeText={(text)=>setPassword(text)}
                         secureTextEntry={true} />
                     </View>
