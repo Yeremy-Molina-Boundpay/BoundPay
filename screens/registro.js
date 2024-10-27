@@ -1,26 +1,55 @@
 import React, { useState } from "react";
-import { Text, StyleSheet, View, Image, TextInput, TouchableOpacity, Alert } from "react-native";
+import { Text, StyleSheet, View, Image,ToastAndroid, TextInput, TouchableOpacity, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import appFirebase from '../credenciales';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "../credenciales";
+
+
+
+
 
 export default function Registro(props) {
     
+    const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // lista de símbolos no permitidos
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [password2, setPassword2] = useState("");
+
+   
+    
 
     const registrar = async () => {
         try {
-            
+            // Verificar primero si la contraseña cumple con la longitud mínima
+            if (password.length < 6) {
+                ToastAndroid.show('La contraseña debe tener al menos 6 caracteres', ToastAndroid.SHORT);
+                return;  // Salir de la función si falla esta validación
+            }
+    
+            // Verificar si hay símbolos no permitidos
+            if (simbolosNoPermitidos.test(password)) {
+                ToastAndroid.show('La contraseña solo puede tener letras y números.', ToastAndroid.SHORT);
+                return;
+            }
+    
+            // Verificar si las contraseñas coinciden
+            if (password !== password2) {
+                ToastAndroid.show('Las contraseñas no coinciden', ToastAndroid.SHORT);
+                return;
+            }
+    
+            // Si todas las validaciones son correctas, intenta registrar el usuario
             await createUserWithEmailAndPassword(auth, email, password);
-            Alert.alert("Registro exitoso", "Tu cuenta ha sido creada");
+            ToastAndroid.show('Cuenta creada correctamente.', ToastAndroid.SHORT);
             props.navigation.navigate('Login');
+    
         } catch (error) {
             console.log(error);
             Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
         }
     };
+    
 
     return (
         <View style={styles.padre}>
@@ -31,17 +60,27 @@ export default function Registro(props) {
             <View style={styles.tarjeta}>
                 <View style={styles.cajaTexto}>
                     <TextInput
-                        placeholder="correo@gmail.com"
+                        placeholder="Correo@gmail.com"
                         style={{ paddingHorizontal: 15 }}
                         onChangeText={(text) => setEmail(text)}
                     />
                 </View>
 
+
                 <View style={styles.cajaTexto}>
                     <TextInput
-                        placeholder="contraseña"
+                        placeholder="Contraseña"
                         style={{ paddingHorizontal: 15 }}
                         onChangeText={(text) => setPassword(text)}
+                        secureTextEntry={true}
+                    />
+                </View>
+
+                <View style={styles.cajaTexto}>
+                    <TextInput
+                        placeholder="Repita su contraseña"
+                        style={{ paddingHorizontal: 15 }}
+                        onChangeText={(text) => setPassword2(text)}
                         secureTextEntry={true}
                     />
                 </View>

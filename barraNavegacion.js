@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Home from "./screens/Home";
 import QrScanner from "./screens/qrScanner";
 import CrearEvento from "./screens/crearEvento";
+import EventosCreados from "./screens/eventosCreados";
 
 
 
@@ -57,6 +58,18 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                         tabBarLabel: 'Escanear QR',
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="qr-code-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
+
+                <barraNavegacion.Screen
+                    name="eventosCreados"
+                    component={EventosCreados}
+                    options={{
+                        headerShown: false,
+                        tabBarLabel: 'Tus eventos',
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="reader-outline" color={color} size={size} />
                         ),
                     }}
                 />
