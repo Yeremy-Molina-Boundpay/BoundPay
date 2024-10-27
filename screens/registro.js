@@ -11,7 +11,7 @@ import { auth } from "../credenciales";
 
 export default function Registro(props) {
     
-    const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // Define aquí tu regex de símbolos no permitidos
+    const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // lista de símbolos no permitidos
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [password2, setPassword2] = useState("");
