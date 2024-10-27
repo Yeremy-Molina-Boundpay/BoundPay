@@ -33,7 +33,7 @@ function MyStack() {
       }} />
       <Stack.Screen name="barraNavegacion" component={BarraNavegacion}/*se cambio el redireccinamineto, ahora lleva a la barra de navegacion y esta permite ver todas las pantallas */
       options={{
-        title:"Boundpay",
+        title:"BoundPay",
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
