@@ -11,6 +11,7 @@ import { auth } from "../credenciales";
 
 export default function Registro(props) {
     
+    const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // Define aquí tu regex de símbolos no permitidos
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [password2, setPassword2] = useState("");
@@ -20,25 +21,35 @@ export default function Registro(props) {
 
     const registrar = async () => {
         try {
-            if(password==password2){
-                await createUserWithEmailAndPassword(auth, email, password);
-
-               
-    
-                
-                ToastAndroid.show('Tu cuenta se creo exitosamente.', ToastAndroid.SHORT);
-                props.navigation.navigate('Login');
-                
-
-            }else{
-                ToastAndroid.show('Las contraseñas no coinciden', ToastAndroid.LONG);
+            // Verificar primero si la contraseña cumple con la longitud mínima
+            if (password.length < 6) {
+                ToastAndroid.show('La contraseña debe tener al menos 6 caracteres', ToastAndroid.SHORT);
+                return;  // Salir de la función si falla esta validación
             }
-            
+    
+            // Verificar si hay símbolos no permitidos
+            if (simbolosNoPermitidos.test(password)) {
+                ToastAndroid.show('La contraseña solo puede tener letras y números.', ToastAndroid.SHORT);
+                return;
+            }
+    
+            // Verificar si las contraseñas coinciden
+            if (password !== password2) {
+                ToastAndroid.show('Las contraseñas no coinciden', ToastAndroid.SHORT);
+                return;
+            }
+    
+            // Si todas las validaciones son correctas, intenta registrar el usuario
+            await createUserWithEmailAndPassword(auth, email, password);
+            ToastAndroid.show('Cuenta creada correctamente.', ToastAndroid.SHORT);
+            props.navigation.navigate('Login');
+    
         } catch (error) {
             console.log(error);
             Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
         }
     };
+    
 
     return (
         <View style={styles.padre}>
