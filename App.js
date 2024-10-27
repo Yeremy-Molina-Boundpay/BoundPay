@@ -7,6 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
 import Registro from './screens/registro';
 import BarraNavegacion from './barraNavegacion';
+import DetallesEvento from './screens/DetallesEvento';
 
 
 
@@ -27,6 +28,13 @@ function MyStack() {
       <Stack.Screen name="Registro" component={Registro}
       options={{
         title:"Registro de usuario",
+        headerTintColor:"white",
+        headerTitleAlign:'center',
+        headerStyle: { backgroundColor: "#525FE1" },
+      }} />
+      <Stack.Screen name="Detalles" component={DetallesEvento}
+      options={{
+        title:"BoundPay",
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
