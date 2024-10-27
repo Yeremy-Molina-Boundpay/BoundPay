@@ -5,8 +5,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import Home from "./screens/Home";
 import QrScanner from "./screens/qrScanner";
-import CrearEvento from "./screens/crearEvento";
-import EventosCreados from "./screens/eventosCreados";
+import CrearEvento from "./screens/CrearEvento";
+import EventosCreados from "./screens/EventosCreados";
 
 
 
@@ -42,6 +42,7 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                     name="home"
                     component={Home}
                     options={{
+                        tabBarHideOnKeyboard: true,
                         headerShown: false,/*esto es para que no salga una segunda barra con el titulo en cada pantalla */
                         tabBarLabel: 'Deudas',
                         tabBarIcon: ({ color, size }) => (
@@ -54,6 +55,7 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                     name="qr"
                     component={QrScanner}
                     options={{
+                        tabBarHideOnKeyboard: true,
                         headerShown: false,
                         tabBarLabel: 'Escanear QR',
                         tabBarIcon: ({ color, size }) => (
@@ -63,9 +65,10 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                 />
 
                 <barraNavegacion.Screen
-                    name="eventosCreados"
+                    name="EventosCreados"
                     component={EventosCreados}
                     options={{
+                        tabBarHideOnKeyboard: true,
                         headerShown: false,
                         tabBarLabel: 'Tus eventos',
                         tabBarIcon: ({ color, size }) => (
@@ -75,9 +78,10 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                 />
                 
                 <barraNavegacion.Screen
-                    name="crearEvento"
+                    name="CrearEvento"
                     component={CrearEvento}
                     options={{
+                        tabBarHideOnKeyboard: true,
                         headerShown: false,
                         tabBarLabel: 'Crear Evento',
                         tabBarIcon: ({ color, size }) => (
