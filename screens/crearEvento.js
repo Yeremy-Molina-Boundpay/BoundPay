@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
     },
     tarjeta:{
         margin:20,
-        backgroundColor:'whtie',
+        backgroundColor:'white',
         borderRadius:20,
         width:'90%',
-        padding:20,
+        padding:10,
         shadowColor:'#000',
         shadowOffset:{
             width:0,

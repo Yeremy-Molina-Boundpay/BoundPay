@@ -19,8 +19,8 @@ export default function Login(props){
     const login = async()=>{
         try {
             await signInWithEmailAndPassword(auth, email, password)
-            ToastAndroid.show('Sesion iniciada correctamente.', ToastAndroid.SHORT);
-            props.navigation.navigate('barraNavegacion')
+            ToastAndroid.show('Sesion iniciada correctamente.', ToastAndroid.SHORT, ToastAndroid.BOTTOM);
+            props.navigation.replace('barraNavegacion')
         } catch (error) {
             console.log(error)
             Alert.alert("Error", "El usuario o la contraseña son incorrectos")
