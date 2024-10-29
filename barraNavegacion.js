@@ -5,8 +5,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import Home from "./screens/Home";
 import QrScanner from "./screens/qrScanner";
-import CrearEvento from "./screens/CrearEvento";
-import EventosCreados from "./screens/EventosCreados";
+import CrearEvento from "./screens/crearEvento";
+import EventosCreados from "./screens/eventosCreados";
 
 
 
