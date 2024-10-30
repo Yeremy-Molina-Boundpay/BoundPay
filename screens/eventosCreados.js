@@ -21,11 +21,14 @@ export default function Eventos(props){
                 const querySnapshot = await getDocs(collection(db,'eventos'))
                 const docs = []
                 querySnapshot.forEach((doc)=>{
-                    const {titulo, detalle, fecha, hora} = doc.data()
+                    const {titulo, detalle,monto,cantidadParticipantes,usuarios, fecha, hora} = doc.data()
                     docs.push({
                         id:doc.id,
                         titulo,
                         detalle,
+                        monto,
+                        cantidadParticipantes,
+                        usuarios,
                         fecha
                     })
                 })

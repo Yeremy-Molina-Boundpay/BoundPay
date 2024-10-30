@@ -32,12 +32,18 @@ export default function DetallesEvento(props) {
     return (
       <View>
         <View style={styles.contenedor}>
-            <Text style={styles.texto}>Titulo: {evento.titulo}</Text>
-            <Text style={styles.texto}>Detalle: {evento.detalle}</Text>
-            <Text style={styles.texto}>Fecha: {evento.fecha}</Text>
+            <Text style={styles.textoTitulo}>{evento.titulo}</Text>
+            <Text style={styles.texto}>Descripcion:</Text>
+            <Text style={styles.textoContendor}>{evento.detalle}</Text>
+            <Text style={styles.texto}>Monto total:</Text>
+            <Text style={styles.textoContendor}>{evento.monto}</Text>
+            <Text style={styles.texto}>Cantidad participantes:</Text>
+            <Text style={styles.textoContendor}>{evento.cantidadParticipantes}</Text>
+            <Text style={styles.texto}>Fecha:</Text>
+            <Text style={styles.textoContendor}>{evento.fecha}</Text>
 
             <TouchableOpacity style={styles.botonEliminar} onPress={()=>deleteEvento(props.route.params.eventoId)}>
-                <Text style={styles.textoEliminar}>Eliminar</Text>
+                <Text style={styles.textoEliminar}>Finalizar evento</Text>
             </TouchableOpacity>
         </View>
       </View>
@@ -78,7 +84,24 @@ const styles = StyleSheet.create({
     textoEliminar:{
         textAlign:'center',
         padding:10,
-        color:'wite',
+        color:'white',
         fontSize:16
+    },
+    textoContendor:{
+        borderColor:'slategray',
+        borderWidth:1,
+        padding:10,
+        marginTop:10,
+        borderRadius:8
+    },
+    textoTitulo: {
+        borderColor: 'black',
+        borderWidth: 1,
+        padding: 2,
+        marginTop: 10,
+        borderRadius: 8,
+        fontSize: 19,
+        fontWeight: 'bold',
+        textAlign: 'center' 
     }
 })

@@ -5,13 +5,19 @@ import { Text, StyleSheet, View, TextInput, TouchableOpacity, Alert } from 'reac
 
 import appFirebase from '../credenciales'
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, getDoc, setDoct } from 'firebase/firestore';
+import { Input } from '@rneui/base';
 const db = getFirestore(appFirebase)
 
 export default function CrearEvento(props){
 
     const initialState = {
         titulo:'',
-        detalle:''
+        detalle:'',
+        monto:0,
+        cantidadParticipantes:0,
+        usuarios:[],
+        comprobantes:[],
+
     }
 
     // Necesario para usar libreria
@@ -51,15 +57,17 @@ export default function CrearEvento(props){
     const saveEvento = async()=>{
 
         try {
-            if(estado.titulo === '' || estado.detalle === '' || fecha === ''){
+            if(estado.titulo === '' || estado.detalle === '' || fecha === '' || estado.cantidadParticipantes === '' || estado.monto === ''){
                 Alert.alert('Advertencia', 'No puedes dejar los campos vacios')
             }
             else{
                 const evento = {
                     titulo: estado.titulo,
                     detalle: estado.detalle,
-                    fecha: fecha
-                }
+                    fecha: fecha,
+                    cantidadParticipantes: parseInt(estado.cantidadParticipantes, 10),
+                    monto: parseInt(estado.monto, 10), 
+                };
                 await addDoc(collection(db,'eventos'),{
                     ...evento
                 })
@@ -79,13 +87,31 @@ export default function CrearEvento(props){
     return (
       <View style={styles.contenedorPadre}>
         <View style={styles.tarjeta}>
+        <TextInput style={styles.textoTitulo}>Nuevo evento</TextInput>
             <View style={styles.contenedor}>
+                
+
                 <TextInput placeholder='Ingresa el titulo'
                 style={styles.textoInput}
                 value={estado.titulo}
                 onChangeText={(value)=>handleChangeText(value, 'titulo')}
                 />
-                <TextInput placeholder='Ingresa el detalle'
+
+                <TextInput placeholder='Ingresa el monto total'
+                keyboardType='numeric'
+                style={styles.textoInput}
+                value={estado.monto}
+                onChangeText={(value)=>handleChangeText(value, 'monto')}
+                />
+
+                <TextInput placeholder='Ingresa la cantidad de participantes'
+                keyboardType='numeric'
+                style={styles.textoInput}
+                value={estado.cantidadParticipantes}
+                onChangeText={(value)=>handleChangeText(value, 'cantitdadParticipantes')}
+                />
+
+                <TextInput placeholder='Ingresa la descripcion'
                 multiline={true}
                 numberOfLines={4}
                 style={styles.textoInput}
@@ -189,12 +215,20 @@ const styles = StyleSheet.create({
         borderRadius:20,
         marginLeft:20,
         marginRight:20,
-        marginTop:20
+        marginTop:30
     },
     textoBtnEnviar:{
         textAlign:'center',
         padding:10,
         color:'white',
         fontSize:16
+    },
+    textoTitulo: {
+        padding: 2,
+        marginTop: 10,
+        fontSize: 19,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        textDecorationLine: 'underline'
     }
 })
