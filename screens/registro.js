@@ -1,77 +1,108 @@
-import React, { useState } from "react";
-import { Text, StyleSheet, View, Image,ToastAndroid, TextInput, TouchableOpacity, Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import appFirebase from '../credenciales';
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from "../credenciales";
+import React, { useState, useEffect } from 'react'
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { KeyboardAvoidingView, Platform, ToastAndroid } from 'react-native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { Text, StyleSheet, View, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { auth } from '../credenciales';
+
+
+import appFirebase from '../credenciales'
+import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
+import { ScrollView } from 'react-native-gesture-handler';
+const db = getFirestore(appFirebase)
 
 
 
+export default function CrearUsuario(props) {
+    const initialUserState = {
+        nombreUsuario: '',
+        gmail: '',
+        password: '',
+        password2: '',
+        deudas: [],
+        eventosCreados: []
+    };
 
+    const [user, setUser] = useState(initialUserState);
 
-export default function Registro(props) {
-    
     const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // lista de símbolos no permitidos
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [password2, setPassword2] = useState("");
 
-   
-    
+    const handleChangeText = (value, name) => {
+        setUser({ ...user, [name]: value });
+    };
 
     const registrar = async () => {
         try {
-            // Verificar primero si la contraseña cumple con la longitud mínima
-            if (password.length < 6) {
-                ToastAndroid.show('La contraseña debe tener al menos 6 caracteres', ToastAndroid.SHORT);
-                return;  // Salir de la función si falla esta validación
+            if (user.gmail === '' || user.password === '' || user.nombreUsuario === '') {
+                ToastAndroid.show("Los campos no pueden estar vacios", ToastAndroid.SHORT)
+                return;
             }
-    
-            // Verificar si hay símbolos no permitidos
-            if (simbolosNoPermitidos.test(password)) {
+            if (user.password !== user.password2) {
+                ToastAndroid.show("Las contraseñas no coinciden", ToastAndroid.SHORT)
+                return;
+            }
+
+      
+            if (simbolosNoPermitidos.test(user.password)) {
                 ToastAndroid.show('La contraseña solo puede tener letras y números.', ToastAndroid.SHORT);
                 return;
             }
-    
-            // Verificar si las contraseñas coinciden
-            if (password !== password2) {
-                ToastAndroid.show('Las contraseñas no coinciden', ToastAndroid.SHORT);
+
+            if (user.password.length < 6) {
+                ToastAndroid.show("La contraseña debe tener al menos 6 caracteres", ToastAndroid.SHORT)
                 return;
             }
-    
-            // Si todas las validaciones son correctas, intenta registrar el usuario
-            await createUserWithEmailAndPassword(auth, email, password);
-            ToastAndroid.show('Cuenta creada correctamente.', ToastAndroid.SHORT);
+
+            // Registrar al usuario con Firebase Authentication
+            const userCredential = await createUserWithEmailAndPassword(auth, user.gmail, user.password);
+            const registeredUser = userCredential.user;
+
+            // Guardar datos adicionales del usuario en Firestore
+            await setDoc(doc(db, 'usuarios', registeredUser.uid), {
+                nombreUsuario: user.nombreUsuario,
+                gmail: user.gmail,
+                deudas: user.deudas,
+                eventosCreados: user.eventosCreados
+            });
+
+            ToastAndroid("Usuario registrado con exito", ToastAndroid.SHORT)
+            setUser(initialUserState); // Reiniciar el estado después de guardar
             props.navigation.navigate('Login');
-    
         } catch (error) {
             console.log(error);
-            Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
+            Alert.alert('Error', 'Hubo un problema al registrar el usuario');
         }
     };
-    
 
     return (
         <View style={styles.padre}>
-            <View>
-                <Image source={require('../assets/profile.jpg')} style={styles.profile} />
-            </View>
-
             <View style={styles.tarjeta}>
+            <KeyboardAvoidingView>
+            <ScrollView  scrollEnabled={true}>
                 <View style={styles.cajaTexto}>
                     <TextInput
                         placeholder="Correo@gmail.com"
                         style={{ paddingHorizontal: 15 }}
-                        onChangeText={(text) => setEmail(text)}
+                        onChangeText={(text) => handleChangeText(text, 'gmail')}
+                        value={user.gmail}
                     />
                 </View>
 
+                <View style={styles.cajaTexto}>
+                    <TextInput
+                        placeholder="Nombre de usuario"
+                        style={{ paddingHorizontal: 15 }}
+                        onChangeText={(text) => handleChangeText(text, 'nombreUsuario')}
+                        value={user.nombreUsuario}
+                    />
+                </View>
 
                 <View style={styles.cajaTexto}>
                     <TextInput
                         placeholder="Contraseña"
                         style={{ paddingHorizontal: 15 }}
-                        onChangeText={(text) => setPassword(text)}
+                        onChangeText={(text) => handleChangeText(text, 'password')}
+                        value={user.password}
                         secureTextEntry={true}
                     />
                 </View>
@@ -80,9 +111,17 @@ export default function Registro(props) {
                     <TextInput
                         placeholder="Repita su contraseña"
                         style={{ paddingHorizontal: 15 }}
-                        onChangeText={(text) => setPassword2(text)}
+                        onChangeText={(text) => handleChangeText(text, 'password2')}
+                        value={user.password2}
                         secureTextEntry={true}
                     />
+                </View>
+
+                <View style={styles.tarjeta}>
+                    <Text style={styles.textoColor}>Requisitos para la contraseña:</Text>
+                    <Text></Text>
+                    <Text>* Longitud mínima de 6 caracteres</Text>
+                    <Text>* Solo puede tener letras y números</Text>
                 </View>
 
                 <View style={styles.padreBoton}>
@@ -90,8 +129,11 @@ export default function Registro(props) {
                         <Text style={styles.textoBoton}>Registrarse</Text>
                     </TouchableOpacity>
                 </View>
+                </ScrollView>
+                </KeyboardAvoidingView>
             </View>
         </View>
+        
     );
 }
 
@@ -122,6 +164,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+    },
+    textoColor: {
+        color: '#525FE1'
     },
     cajaTexto: {
         paddingVertical: 20,
