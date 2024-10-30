@@ -65,7 +65,7 @@ export default function CrearUsuario(props) {
                 eventosCreados: user.eventosCreados
             });
 
-            ToastAndroid("Usuario registrado con exito", ToastAndroid.SHORT)
+            ToastAndroid.show("Usuario registrado con exito", ToastAndroid.SHORT)
             setUser(initialUserState); // Reiniciar el estado después de guardar
             props.navigation.navigate('Login');
         } catch (error) {
