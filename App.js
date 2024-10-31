@@ -8,6 +8,7 @@ import Login from './screens/Login';
 import Registro from './screens/registro';
 import BarraNavegacion from './barraNavegacion';
 import DetallesEvento from './screens/DetallesEvento';
+import DetallesDeudas from './screens/detalleDeuda';
 
 
 
@@ -33,6 +34,13 @@ function MyStack() {
         headerStyle: { backgroundColor: "#525FE1" },
       }} />
       <Stack.Screen name="Detalles" component={DetallesEvento}
+      options={{
+        title:"BoundPay",
+        headerTintColor:"white",
+        headerTitleAlign:'center',
+        headerStyle: { backgroundColor: "#525FE1" },
+      }} />
+      <Stack.Screen name="DetallesDeudas" component={DetallesDeudas}
       options={{
         title:"BoundPay",
         headerTintColor:"white",
