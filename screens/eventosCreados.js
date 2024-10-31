@@ -9,8 +9,8 @@ const db = getFirestore(appFirebase);
 
 export default function Eventos(props) {
     const [lista, setLista] = useState([]);
-    const [userId, setUserId] = useState(null); // Estado para almacenar el ID del usuario
-    const [eventosCreados, setEventosCreados] = useState([]); // Estado para almacenar los eventos creados por el usuario
+    const [userId, setUserId] = useState(null); 
+    const [eventosCreados, setEventosCreados] = useState([]); // Para almacenar los eventos creados por el usuario
 
     // Obtener ID del usuario actual
     useEffect(() => {
@@ -23,19 +23,20 @@ export default function Eventos(props) {
             console.log("No hay usuario autenticado");
         }
     }, []);
+    
 
 
     useEffect(() => {
         const getEventosCreados = async () => {
             if (userId) { 
                 try {
-                    const usuarioRef = doc(db, 'usuarios', userId); // Obtiene referencia al documento del usuario
-                    const usuarioDoc = await getDoc(usuarioRef); // Obtiene el documento del usuario
+                    const usuarioRef = doc(db, 'usuarios', userId); 
+                    const usuarioDoc = await getDoc(usuarioRef); 
 
                     if (usuarioDoc.exists()) {
                         const data = usuarioDoc.data();
                         const eventos = data.eventosCreados || []; // Obtiene la lista de eventos creados
-                        console.log("Eventos creados por el usuario:", eventos); // Log de eventos creados
+                        console.log("Eventos creados por el usuario:", eventos); // muestra los id de los eventos en consola, ayuda a la hora de probar el codigo, no se muestra en la app
                         setEventosCreados(eventos); // Guarda los eventos creados en el estado
                     } else {
                         console.log("El documento del usuario no existe.");
@@ -65,17 +66,18 @@ export default function Eventos(props) {
                         const querySnapshot = await getDocs(eventosQuery);
                         const docs = [];
                         querySnapshot.forEach((doc) => {
-                            const { titulo, detalle, monto, cantidadParticipantes, fecha } = doc.data();
+                            const { titulo, detalle, monto, cantidadParticipantes,usuarios, fecha } = doc.data();
                             docs.push({
                                 id: doc.id,
                                 titulo,
                                 detalle,
                                 monto,
                                 cantidadParticipantes,
+                                usuarios,
                                 fecha
                             });
                         });
-                        console.log("Eventos obtenidos:", docs); // Log de eventos obtenidos
+                        console.log("Eventos obtenidos:", docs); // Muestra los eventos obtenidos en la consola
                         setLista(docs); // Guarda los eventos en la lista
                     } else {
                         console.log("No hay eventos válidos en eventosCreados.");
@@ -89,12 +91,12 @@ export default function Eventos(props) {
         };
 
         getListaEventos();
-    }, [eventosCreados]); // Dependencia de eventosCreados
+    }, [eventosCreados]); 
 
     return (
         <ScrollView>
             <View style={styles.contenedor}>
-                {lista.length > 0 ? ( // Muestra mensaje si no hay eventos
+                {lista.length > 0 ? ( 
                     lista.map((even) => (
                         <ListItem bottomDivider key={even.id} onPress={() => { props.navigation.navigate('Detalles', { eventoId: even.id }) }}>
                             <ListItem.Content>
