@@ -6,8 +6,8 @@ import appFirebase from '../credenciales';
 
 const db = getFirestore(appFirebase);
 
-export default function DetallesEvento(props) {
-  const [nombreUsuario, setNombreUsuario] = useState('');
+export default function DetallesDeudas(props) {
+
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
 
@@ -52,62 +52,7 @@ export default function DetallesEvento(props) {
   };
 
   // Función para agregar un usuario al evento
-  const agregarUsuarioAlEvento = async () => {
-    if (!nombreUsuario.trim()) {
-      Alert.alert('Error', 'Por favor, ingresa un nombre de usuario.');
-      return;
-    }
-
-    try {
-      const q = query(collection(db, 'usuarios'), where('nombreUsuario', '==', nombreUsuario));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        querySnapshot.forEach(async (docSnapshot) => {
-          const usuarioId = docSnapshot.id;
-          const usuarioNombre = docSnapshot.data().nombreUsuario;
-
-          if (!usuarios.some((usuario) => usuario.id === usuarioId)) {
-            const eventoRef = doc(db, 'eventos', eventoId);
-            const eventoDoc = await getDoc(eventoRef);
-
-            if (eventoDoc.exists()) {
-              const usuariosEnEvento = eventoDoc.data().usuarios || [];
-
-              await updateDoc(eventoRef, {
-                usuarios: [...usuariosEnEvento, usuarioId]
-              });
-
-              const usuarioRef = doc(db, 'usuarios', usuarioId);
-              const usuarioDoc = await getDoc(usuarioRef);
-
-              if (usuarioDoc.exists()) {
-                const deudas = usuarioDoc.data().deudas || [];
-
-                await updateDoc(usuarioRef, {
-                  deudas: [...deudas, eventoId]
-                });
-
-                setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId }]);
-
-                Alert.alert('Éxito', `Usuario ${usuarioNombre} añadido al evento y el evento se agregó a sus deudas.`);
-
-                // Vacía el campo del TextInput después de agregar el usuario
-                setNombreUsuario('');
-              }
-            }
-          } else {
-            Alert.alert('Advertencia', 'Este usuario ya está en la lista.');
-          }
-        });
-      } else {
-        Alert.alert('Error', 'No se encontró ningún usuario con ese nombre.');
-      }
-    } catch (error) {
-      console.error('Error al obtener el ID del usuario:', error);
-      Alert.alert('Error', 'Ocurrió un error al obtener el usuario.');
-    }
-  };
+  
 
   // Efecto para obtener los detalles del evento y los usuarios cuando el componente se monta
   useEffect(() => {
@@ -115,12 +60,7 @@ export default function DetallesEvento(props) {
     getUsuariosEnEvento(eventoId); // Cargar usuarios cuando se carga el evento
   }, [eventoId]);
 
-  // Función para eliminar el evento
-  const deleteEvento = async (id) => {
-    await deleteDoc(doc(db, 'eventos', id));
-    Alert.alert('Éxito', 'Evento eliminado correctamente');
-    props.navigation.navigate('EventosCreados');
-  };
+ 
 
   return (
     <View>
@@ -136,27 +76,12 @@ export default function DetallesEvento(props) {
             <Text style={styles.textoContendor}>{evento.monto}</Text>
           </View>
           <View style={styles.column}>
-            <Text style={styles.texto}>Cantidad usuarios:</Text>
-            <Text style={styles.textoContendor}>{evento.cantidadParticipantes}</Text>
+            <Text style={styles.texto}>Monto a pagar:</Text>
+            <Text style={styles.textoContendor}></Text>
           </View>
         </View>
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.texto}>Añadir participantes:</Text>
-            <TextInput
-              style={styles.textoContendor}
-              placeholder="Nombre de usuario"
-              value={nombreUsuario}
-              onChangeText={(text) => setNombreUsuario(text)} // Actualiza el valor ingresado
-            />
-          </View>
-          <View style={styles.column}>
-            <Text></Text>
-            <TouchableOpacity style={styles.botonAñadir} onPress={agregarUsuarioAlEvento}>
-              <Text style={styles.textoEliminar}>Añadir</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+       
+          
         <Text style={styles.texto}>Usuarios añadidos:</Text>
         <View style={styles.textoContendor}>
           
@@ -165,7 +90,7 @@ export default function DetallesEvento(props) {
           ))}
         </View>
         <TouchableOpacity style={styles.botonEliminar} onPress={() => deleteEvento(eventoId)}>
-          <Text style={styles.textoEliminar}>Finalizar evento</Text>
+          <Text style={styles.textoEliminar}>Marcar como pagado</Text>
         </TouchableOpacity>
       </View>
     </View>
