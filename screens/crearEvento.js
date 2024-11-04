@@ -113,7 +113,7 @@ export default function CrearEvento(props) {
                         placeholder='Ingresa el monto total'
                         keyboardType='numeric'
                         style={styles.textoInput}
-                        value={estado.monto.toString()} // Asegúrate de convertir a string
+                        value={estado.monto.toString()} 
                         onChangeText={(value) => handleChangeText(value, 'monto')}
                     />
 
