@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
@@ -16,7 +16,7 @@ export default function DetallesEvento(props) {
   const [montosEditados, setMontosEditados] = useState({}); 
 
 
-  const eventoId = props.route.params.eventoId; // Obtén el ID del evento actual desde los parámetros de navegación
+  const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
 
   // Función para obtener los usuarios añadidos al evento
   const getUsuariosEnEvento = async (eventoId) => {
@@ -35,7 +35,7 @@ export default function DetallesEvento(props) {
               return { 
                 id: usuarioData.id,
                 nombreUsuario: usuarioDoc.data().nombreUsuario,
-                montoApagar: usuarioData.montoApagar // Asegúrate de obtener el monto
+                montoApagar: usuarioData.montoApagar 
               };
             }
           })
@@ -64,7 +64,7 @@ export default function DetallesEvento(props) {
   // Función para agregar un usuario al evento
   const agregarUsuarioAlEvento = async () => {
     if (!nombreUsuario.trim()) {
-      Alert.alert('Error', 'Por favor, ingresa un nombre de usuario.');
+      ToastAndroid.show('Por favor, ingresa un nombre de usuario.', ToastAndroid.SHORT);
       return;
     }
   
@@ -76,26 +76,31 @@ export default function DetallesEvento(props) {
         querySnapshot.forEach(async (docSnapshot) => {
           const usuarioId = docSnapshot.id;
           const usuarioNombre = docSnapshot.data().nombreUsuario;
+          
   
           const montoApagar = evento.monto / evento.cantidadParticipantes;  
 
           if (!usuarios.some((usuario) => usuario.id === usuarioId)) {
             const eventoRef = doc(db, 'eventos', eventoId);
             const eventoDoc = await getDoc(eventoRef);
+            const usuariosEnEvento = eventoDoc.data().usuarios || [];  // Obtener usuarios ya existentes o un arreglo vacío
   
-            if (eventoDoc.exists()) {
-              const usuariosEnEvento = eventoDoc.data().usuarios || [];  // Obtener usuarios ya existentes o un arreglo vacío
   
+            if (eventoDoc.exists()&& usuariosEnEvento.length < evento.cantidadParticipantes) {
+              
               // Añadir el usuario junto con el monto que debe pagar
               await updateDoc(eventoRef, {
                 usuarios: [...usuariosEnEvento, { id: usuarioId, montoApagar }]  // Guardamos el id y el montoApagar
               });
+
   
               const usuarioRef = doc(db, 'usuarios', usuarioId);
               const usuarioDoc = await getDoc(usuarioRef);
-  
+              
+
               if (usuarioDoc.exists()) {
                 const deudas = usuarioDoc.data().deudas || [];
+                
   
                 await updateDoc(usuarioRef, {
                   deudas: [...deudas, eventoId]  // Añadir el evento a las deudas del usuario
@@ -104,14 +109,17 @@ export default function DetallesEvento(props) {
                 // Agregar al estado de usuarios para mostrarlo en la UI
                 setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId, montoApagar }]);
   
-                Alert.alert('Éxito', `Usuario ${usuarioNombre} añadido al evento y el evento se agregó a sus deudas.`);
+                ToastAndroid.show('añadido al evento y el evento se agregó a sus deudas.',ToastAndroid.SHORT);
   
                 // Vaciar el campo del TextInput después de añadir el usuario
                 setNombreUsuario('');
               }
             }
+            if (usuariosEnEvento.length > evento.cantidadParticipantes){
+              ToastAndroid.show('No puede agregar más usuarios a este evento', ToastAndroid.SHORT)
+            }
           } else {
-            Alert.alert('Advertencia', 'Este usuario ya está en la lista.');
+            ToastAndroid.show('No puede agregar el mismo usuario dos veces', ToastAndroid.SHORT);
           }
         });
       } else {
@@ -123,15 +131,15 @@ export default function DetallesEvento(props) {
     }
   };
   
-  // Efecto para obtener los detalles del evento y los usuarios cuando el componente se monta
+
   useEffect(() => {
     getOneEvento(eventoId);
-    getUsuariosEnEvento(eventoId); // Cargar usuarios cuando se carga el evento
+    getUsuariosEnEvento(eventoId); // Carga usuarios cuando se carga el evento
   }, [eventoId]);
 
 const deleteEvento = async (id) => {
     await deleteDoc(doc(db, 'eventos', id));
-    Alert.alert('Éxito', 'Evento eliminado correctamente');
+    ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
     props.navigation.navigate('EventosCreados');
   };
   // Función para asignar los montos personalizados y actualizarlos en la base de datos
@@ -149,7 +157,7 @@ const deleteEvento = async (id) => {
         await updateDoc(eventoRef, { usuarios: usuariosActualizados });
 
         Alert.alert('Éxito', 'Montos actualizados correctamente');
-        getUsuariosEnEvento(eventoId); // Recargar usuarios después de actualizar
+        getUsuariosEnEvento(eventoId); // Recarga usuarios después de actualizar
       }
     } catch (error) {
       console.error('Error al actualizar los montos:', error);
@@ -162,7 +170,7 @@ const deleteEvento = async (id) => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100} // Puedes ajustar este valor según el diseño de tu app
+        keyboardVerticalOffset={100} 
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.contenedor}>

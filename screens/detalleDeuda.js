@@ -11,9 +11,9 @@ export default function DetallesDeudas(props) {
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
 
-  const eventoId = props.route.params.eventoId; // Obtén el ID del evento actual desde los parámetros de navegación
+  const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
 
-  // Función para obtener los usuarios añadidos al evento
+ 
 // Función para obtener los usuarios añadidos al evento
 const getUsuariosEnEvento = async (eventoId) => {
   try {
@@ -32,7 +32,7 @@ const getUsuariosEnEvento = async (eventoId) => {
             return { 
               id: usuarioData.id,
               nombreUsuario: usuarioDoc.data().nombreUsuario,
-              montoApagar: usuarioData.montoApagar // Asegúrate de obtener el monto
+              montoApagar: usuarioData.montoApagar 
             };
           }
         })
