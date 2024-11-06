@@ -216,11 +216,14 @@ const deleteEvento = async (id) => {
               style={styles.usuarioMonto}
               placeholder={`$${usuario.montoApagar}`}
               keyboardType="numeric"
-              value={montosEditados[usuario.id]?.toString() || usuario.montoApagar.toString()}
-              onChangeText={(text) =>
-                setMontosEditados({ ...montosEditados, [usuario.id]: parseInt(text) })
-              }
-            ></TextInput>
+              value={montosEditados[usuario.id]?.toString() || (isNaN(usuario.montoApagar) ? '' : usuario.montoApagar.toString())}  // Evitar NaN
+                  onChangeText={(text) => {
+                    const monto = text.trim();
+                    if (monto === '' || !isNaN(monto)) {  // Aceptar vacío o valores numéricos
+                      setMontosEditados({ ...montosEditados, [usuario.id]: monto === '' ? 0 : parseFloat(monto) });
+                    }
+                  }}
+                />
           </View>
         ))}
         

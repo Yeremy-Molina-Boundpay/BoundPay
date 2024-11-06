@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Text, StyleSheet, View, ScrollView } from 'react-native';
+import { Text, StyleSheet, View, ScrollView, RefreshControl } from 'react-native';
 import appFirebase from '../credenciales';
-import { getFirestore, collection, getDocs, query, where, doc, getDoc,documentId } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, documentId } from 'firebase/firestore';
 import { ListItem } from "@rneui/themed";
 import { getAuth } from "firebase/auth";
 
@@ -10,93 +10,101 @@ const db = getFirestore(appFirebase);
 export default function Eventos(props) {
     const [lista, setLista] = useState([]);
     const [userId, setUserId] = useState(null); 
-    const [eventosCreados, setEventosCreados] = useState([]); // Para almacenar los eventos creados por el usuario
+    const [eventosCreados, setEventosCreados] = useState([]);
+    const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
 
     // Obtener ID del usuario actual
     useEffect(() => {
         const auth = getAuth(appFirebase);
-        const user = auth.currentUser; // Obtiene el usuario autenticado
+        const user = auth.currentUser;
 
         if (user) {
-            setUserId(user.uid); // Guarda el ID del usuario autenticado
+            setUserId(user.uid);
         } else {
             console.log("No hay usuario autenticado");
         }
     }, []);
     
+    const getEventosCreados = async () => {
+        if (userId) {
+            try {
+                const usuarioRef = doc(db, 'usuarios', userId);
+                const usuarioDoc = await getDoc(usuarioRef);
 
+                if (usuarioDoc.exists()) {
+                    const data = usuarioDoc.data();
+                    const eventos = data.eventosCreados || [];
+                    console.log("Eventos creados por el usuario:", eventos);
+                    setEventosCreados(eventos);
+                } else {
+                    console.log("El documento del usuario no existe.");
+                }
+            } catch (error) {
+                console.log("Error al obtener los eventos creados:", error);
+            }
+        }
+    };
+
+    const getListaEventos = async () => {
+        if (eventosCreados.length > 0) {
+            try {
+                const eventosRef = collection(db, 'eventos');
+                const eventosValidos = eventosCreados.filter(id => id);
+                console.log("Eventos válidos para la consulta:", eventosValidos);
+
+                if (eventosValidos.length > 0) {
+                    const eventosQuery = query(eventosRef, where(documentId(), 'in', eventosValidos));
+                    const querySnapshot = await getDocs(eventosQuery);
+                    const docs = [];
+                    querySnapshot.forEach((doc) => {
+                        const { titulo, detalle, monto, cantidadParticipantes, usuarios, fecha } = doc.data();
+                        docs.push({
+                            id: doc.id,
+                            titulo,
+                            detalle,
+                            monto,
+                            cantidadParticipantes,
+                            usuarios,
+                            fecha
+                        });
+                    });
+                    console.log("Eventos obtenidos:", docs);
+                    setLista(docs);
+                } else {
+                    console.log("No hay eventos válidos en eventosCreados.");
+                }
+            } catch (error) {
+                console.log("Error al obtener la lista de eventos:", error);
+            }
+        } else {
+            console.log("No hay eventos creados para mostrar.");
+        }
+    };
 
     useEffect(() => {
-        const getEventosCreados = async () => {
-            if (userId) { 
-                try {
-                    const usuarioRef = doc(db, 'usuarios', userId); 
-                    const usuarioDoc = await getDoc(usuarioRef); 
-
-                    if (usuarioDoc.exists()) {
-                        const data = usuarioDoc.data();
-                        const eventos = data.eventosCreados || []; // Obtiene la lista de eventos creados
-                        console.log("Eventos creados por el usuario:", eventos); // muestra los id de los eventos en consola, ayuda a la hora de probar el codigo, no se muestra en la app
-                        setEventosCreados(eventos); // Guarda los eventos creados en el estado
-                    } else {
-                        console.log("El documento del usuario no existe.");
-                    }
-                } catch (error) {
-                    console.log("Error al obtener los eventos creados:", error);
-                }
-            }
-        };
-
         getEventosCreados();
     }, [userId]);
 
-
     useEffect(() => {
-        const getListaEventos = async () => {
-            if (eventosCreados.length > 0) { // Solo ejecuta si hay eventos creados
-                try {
-                    const eventosRef = collection(db, 'eventos');
-                    // Verifica si eventosCreados contiene elementos válidos
-                    const eventosValidos = eventosCreados.filter(id => id); 
-                    console.log("Eventos válidos para la consulta:", eventosValidos);
-
-                    if (eventosValidos.length > 0) {
-                        const eventosQuery = query(eventosRef, where(documentId(), 'in', eventosValidos)); // Filtra eventos por las IDs en eventosCreados
-
-                        const querySnapshot = await getDocs(eventosQuery);
-                        const docs = [];
-                        querySnapshot.forEach((doc) => {
-                            const { titulo, detalle, monto, cantidadParticipantes,usuarios, fecha } = doc.data();
-                            docs.push({
-                                id: doc.id,
-                                titulo,
-                                detalle,
-                                monto,
-                                cantidadParticipantes,
-                                usuarios,
-                                fecha
-                            });
-                        });
-                        console.log("Eventos obtenidos:", docs); // Muestra los eventos obtenidos en la consola
-                        setLista(docs); // Guarda los eventos en la lista
-                    } else {
-                        console.log("No hay eventos válidos en eventosCreados.");
-                    }
-                } catch (error) {
-                    console.log("Error al obtener la lista de eventos:", error);
-                }
-            } else {
-                console.log("No hay eventos creados para mostrar.");
-            }
-        };
-
         getListaEventos();
-    }, [eventosCreados]); 
+    }, [eventosCreados]);
+
+    // Función onRefresh para el gesto recargar
+    const onRefresh = async () => {
+        setRefreshing(true); // Inicia el estado de refresco
+        await getEventosCreados(); // Vuelve a ejecutar getEventosCreados
+        await getListaEventos(); // Vuelve a ejecutar getListaEventos
+        setRefreshing(false); // Termina el estado de refresco
+    };
 
     return (
-        <ScrollView>
+        <ScrollView
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+        >
             <View style={styles.contenedor}>
-                {lista.length > 0 ? ( 
+                {lista.length > 0 ? (
                     lista.map((even) => (
                         <ListItem bottomDivider key={even.id} onPress={() => { props.navigation.navigate('Detalles', { eventoId: even.id }) }}>
                             <ListItem.Content>
@@ -106,7 +114,7 @@ export default function Eventos(props) {
                         </ListItem>
                     ))
                 ) : (
-                    <Text>No hay eventos disponibles.</Text> // Mensaje alternativo
+                    <Text>No hay eventos disponibles.</Text>
                 )}
             </View>
         </ScrollView>
