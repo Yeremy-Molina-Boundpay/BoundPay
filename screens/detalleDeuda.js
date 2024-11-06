@@ -11,32 +11,43 @@ export default function DetallesDeudas(props) {
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
 
-  const eventoId = props.route.params.eventoId; // Obtén el ID del evento actual desde los parámetros de navegación
+  const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
 
-  // Función para obtener los usuarios añadidos al evento
-  const getUsuariosEnEvento = async (eventoId) => {
-    try {
-      const eventoRef = doc(db, 'eventos', eventoId);
-      const eventoDoc = await getDoc(eventoRef);
+ 
+// Función para obtener los usuarios añadidos al evento
+const getUsuariosEnEvento = async (eventoId) => {
+  try {
+    const eventoRef = doc(db, 'eventos', eventoId);
+    const eventoDoc = await getDoc(eventoRef);
 
-      if (eventoDoc.exists()) {
-        const usuariosEnEvento = eventoDoc.data().usuarios || [];
-        const usuariosData = await Promise.all(
-          usuariosEnEvento.map(async (usuarioId) => {
-            const usuarioRef = doc(db, 'usuarios', usuarioId);
-            const usuarioDoc = await getDoc(usuarioRef);
-            if (usuarioDoc.exists()) {
-              return { id: usuarioId, nombreUsuario: usuarioDoc.data().nombreUsuario };
-            }
-          })
-        );
+    if (eventoDoc.exists()) {
+      const usuariosEnEvento = eventoDoc.data().usuarios || [];
+      
+      // Obtener datos de los usuarios y su monto
+      const usuariosData = await Promise.all(
+        usuariosEnEvento.map(async (usuarioData) => {
+          const usuarioRef = doc(db, 'usuarios', usuarioData.id);
+          const usuarioDoc = await getDoc(usuarioRef);
+          if (usuarioDoc.exists()) {
+            return { 
+              id: usuarioData.id,
+              nombreUsuario: usuarioDoc.data().nombreUsuario,
+              montoApagar: usuarioData.montoApagar 
+            };
+          }
+        })
+      );
 
-        setUsuarios(usuariosData.filter(user => user)); // Filtrar usuarios válidos
-      }
-    } catch (error) {
-      console.error('Error al obtener usuarios del evento:', error);
+      setUsuarios(usuariosData.filter(user => user)); // Filtrar usuarios válidos
     }
-  };
+  } catch (error) {
+    console.error('Error al obtener usuarios del evento:', error);
+  }
+};
+
+
+
+
 
   // Función para obtener los detalles del evento
   const getOneEvento = async (id) => {
@@ -70,25 +81,21 @@ export default function DetallesDeudas(props) {
         <Text style={styles.textoContendor}>{evento.detalle}</Text>
         <Text style={styles.texto}>Fecha:</Text>
         <Text style={styles.textoContendor}>{evento.fecha}</Text>
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.texto}>Monto total:</Text>
-            <Text style={styles.textoContendor}>{evento.monto}</Text>
-          </View>
-          <View style={styles.column}>
-            <Text style={styles.texto}>Monto a pagar:</Text>
-            <Text style={styles.textoContendor}></Text>
-          </View>
+        
+        <View>
+          <Text style={styles.texto}>Monto total:</Text>
+          <Text style={styles.textoContendor}>{evento.monto}</Text>
         </View>
-       
-          
+        
         <Text style={styles.texto}>Usuarios añadidos:</Text>
         <View style={styles.textoContendor}>
           
           {usuarios.map((usuario, index) => (
-            <Text key={index} style={styles.userId}>{usuario.nombreUsuario}</Text> // Muestra el nombre del usuario
+            <Text key={index} style={styles.textoContendor}>
+              {usuario.nombreUsuario} : ${usuario.montoApagar}
+            </Text>
           ))}
-        </View>
+        </View>  
         <TouchableOpacity style={styles.botonEliminar} onPress={() => deleteEvento(eventoId)}>
           <Text style={styles.textoEliminar}>Marcar como pagado</Text>
         </TouchableOpacity>

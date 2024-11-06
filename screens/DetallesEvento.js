@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
+import { KeyboardAvoidingView } from 'react-native';
+import { ScrollView } from 'react-native';
+import { Platform } from 'react-native';
 
 const db = getFirestore(appFirebase);
 
@@ -10,34 +13,41 @@ export default function DetallesEvento(props) {
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
+  const [montosEditados, setMontosEditados] = useState({}); 
 
-  const eventoId = props.route.params.eventoId; // Obtén el ID del evento actual desde los parámetros de navegación
+
+  const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
 
   // Función para obtener los usuarios añadidos al evento
   const getUsuariosEnEvento = async (eventoId) => {
     try {
       const eventoRef = doc(db, 'eventos', eventoId);
       const eventoDoc = await getDoc(eventoRef);
-
+  
       if (eventoDoc.exists()) {
         const usuariosEnEvento = eventoDoc.data().usuarios || [];
+  
         const usuariosData = await Promise.all(
-          usuariosEnEvento.map(async (usuarioId) => {
-            const usuarioRef = doc(db, 'usuarios', usuarioId);
+          usuariosEnEvento.map(async (usuarioData) => {
+            const usuarioRef = doc(db, 'usuarios', usuarioData.id);
             const usuarioDoc = await getDoc(usuarioRef);
             if (usuarioDoc.exists()) {
-              return { id: usuarioId, nombreUsuario: usuarioDoc.data().nombreUsuario };
+              return { 
+                id: usuarioData.id,
+                nombreUsuario: usuarioDoc.data().nombreUsuario,
+                montoApagar: usuarioData.montoApagar 
+              };
             }
           })
         );
-
+  
         setUsuarios(usuariosData.filter(user => user)); // Filtrar usuarios válidos
       }
     } catch (error) {
       console.error('Error al obtener usuarios del evento:', error);
     }
   };
-
+  
   // Función para obtener los detalles del evento
   const getOneEvento = async (id) => {
     try {
@@ -54,50 +64,62 @@ export default function DetallesEvento(props) {
   // Función para agregar un usuario al evento
   const agregarUsuarioAlEvento = async () => {
     if (!nombreUsuario.trim()) {
-      Alert.alert('Error', 'Por favor, ingresa un nombre de usuario.');
+      ToastAndroid.show('Por favor, ingresa un nombre de usuario.', ToastAndroid.SHORT);
       return;
     }
-
+  
     try {
       const q = query(collection(db, 'usuarios'), where('nombreUsuario', '==', nombreUsuario));
       const querySnapshot = await getDocs(q);
-
+  
       if (!querySnapshot.empty) {
         querySnapshot.forEach(async (docSnapshot) => {
           const usuarioId = docSnapshot.id;
           const usuarioNombre = docSnapshot.data().nombreUsuario;
+          
+  
+          const montoApagar = evento.monto / evento.cantidadParticipantes;  
 
           if (!usuarios.some((usuario) => usuario.id === usuarioId)) {
             const eventoRef = doc(db, 'eventos', eventoId);
             const eventoDoc = await getDoc(eventoRef);
-
-            if (eventoDoc.exists()) {
-              const usuariosEnEvento = eventoDoc.data().usuarios || [];
-
+            const usuariosEnEvento = eventoDoc.data().usuarios || [];  // Obtener usuarios ya existentes o un arreglo vacío
+  
+  
+            if (eventoDoc.exists()&& usuariosEnEvento.length < evento.cantidadParticipantes) {
+              
+              // Añadir el usuario junto con el monto que debe pagar
               await updateDoc(eventoRef, {
-                usuarios: [...usuariosEnEvento, usuarioId]
+                usuarios: [...usuariosEnEvento, { id: usuarioId, montoApagar }]  // Guardamos el id y el montoApagar
               });
 
+  
               const usuarioRef = doc(db, 'usuarios', usuarioId);
               const usuarioDoc = await getDoc(usuarioRef);
+              
 
               if (usuarioDoc.exists()) {
                 const deudas = usuarioDoc.data().deudas || [];
-
+                
+  
                 await updateDoc(usuarioRef, {
-                  deudas: [...deudas, eventoId]
+                  deudas: [...deudas, eventoId]  // Añadir el evento a las deudas del usuario
                 });
-
-                setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId }]);
-
-                Alert.alert('Éxito', `Usuario ${usuarioNombre} añadido al evento y el evento se agregó a sus deudas.`);
-
-                // Vacía el campo del TextInput después de agregar el usuario
+  
+                // Agregar al estado de usuarios para mostrarlo en la UI
+                setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId, montoApagar }]);
+  
+                ToastAndroid.show('añadido al evento y el evento se agregó a sus deudas.',ToastAndroid.SHORT);
+  
+                // Vaciar el campo del TextInput después de añadir el usuario
                 setNombreUsuario('');
               }
             }
+            if (usuariosEnEvento.length > evento.cantidadParticipantes){
+              ToastAndroid.show('No puede agregar más usuarios a este evento', ToastAndroid.SHORT)
+            }
           } else {
-            Alert.alert('Advertencia', 'Este usuario ya está en la lista.');
+            ToastAndroid.show('No puede agregar el mismo usuario dos veces', ToastAndroid.SHORT);
           }
         });
       } else {
@@ -108,23 +130,50 @@ export default function DetallesEvento(props) {
       Alert.alert('Error', 'Ocurrió un error al obtener el usuario.');
     }
   };
+  
 
-  // Efecto para obtener los detalles del evento y los usuarios cuando el componente se monta
   useEffect(() => {
     getOneEvento(eventoId);
-    getUsuariosEnEvento(eventoId); // Cargar usuarios cuando se carga el evento
+    getUsuariosEnEvento(eventoId); // Carga usuarios cuando se carga el evento
   }, [eventoId]);
 
-  // Función para eliminar el evento
-  const deleteEvento = async (id) => {
+const deleteEvento = async (id) => {
     await deleteDoc(doc(db, 'eventos', id));
-    Alert.alert('Éxito', 'Evento eliminado correctamente');
+    ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
     props.navigation.navigate('EventosCreados');
   };
+  // Función para asignar los montos personalizados y actualizarlos en la base de datos
+  const asignarMonto = async () => {
+    try {
+      const eventoRef = doc(db, 'eventos', eventoId);
+      const eventoDoc = await getDoc(eventoRef);
 
-  return (
-    <View>
-      <View style={styles.contenedor}>
+      if (eventoDoc.exists()) {
+        const usuariosActualizados = usuarios.map((usuario) => ({
+          id: usuario.id,
+          montoApagar: montosEditados[usuario.id] || usuario.montoApagar,
+        }));
+
+        await updateDoc(eventoRef, { usuarios: usuariosActualizados });
+
+        Alert.alert('Éxito', 'Montos actualizados correctamente');
+        getUsuariosEnEvento(eventoId); // Recarga usuarios después de actualizar
+      }
+    } catch (error) {
+      console.error('Error al actualizar los montos:', error);
+      Alert.alert('Error', 'Ocurrió un error al actualizar los montos.');
+    }
+  };
+
+
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100} 
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
         <Text style={styles.textoContendor}>{evento.detalle}</Text>
@@ -158,20 +207,42 @@ export default function DetallesEvento(props) {
           </View>
         </View>
         <Text style={styles.texto}>Usuarios añadidos:</Text>
+        
         <View style={styles.textoContendor}>
-          
-          {usuarios.map((usuario, index) => (
-            <Text key={index} style={styles.userId}>{usuario.nombreUsuario}</Text> // Muestra el nombre del usuario
-          ))}
-        </View>
+        {usuarios.map((usuario, index) => (
+          <View key={index} style={styles.usuarioMontoContainer}>
+            <Text style={styles.usuarioNombre}>{usuario.nombreUsuario}:</Text>
+            <TextInput
+              style={styles.usuarioMonto}
+              placeholder={`$${usuario.montoApagar}`}
+              keyboardType="numeric"
+              value={montosEditados[usuario.id]?.toString() || (isNaN(usuario.montoApagar) ? '' : usuario.montoApagar.toString())}  // Evitar NaN
+                  onChangeText={(text) => {
+                    const monto = text.trim();
+                    if (monto === '' || !isNaN(monto)) {  // Aceptar vacío o valores numéricos
+                      setMontosEditados({ ...montosEditados, [usuario.id]: monto === '' ? 0 : parseFloat(monto) });
+                    }
+                  }}
+                />
+          </View>
+        ))}
+        
+        <TouchableOpacity style={styles.botonMonto} onPress={asignarMonto}>
+            <Text style={styles.textoEliminar}>Cambiar montos</Text>
+          </TouchableOpacity>
+        </View>  
+        
         <TouchableOpacity style={styles.botonEliminar} onPress={() => deleteEvento(eventoId)}>
           <Text style={styles.textoEliminar}>Finalizar evento</Text>
         </TouchableOpacity>
-      </View>
-    </View>
-  );
+        
+        </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+    
+ 
 }
-
 const styles = StyleSheet.create({
   contenedor: {
     margin: 20,
@@ -242,11 +313,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between'
   },
+  botonMonto: {
+    backgroundColor: '#525FE1',
+    borderColor: '#525FE1',
+    width:150,
+    height:50,
+    borderWidth: 3,
+    borderRadius: 20,
+    marginLeft: 75,
+    marginRight: 20,
+    marginTop: 10
+  },
   column: {
     width: '48%'
   },
   label: {
     fontWeight: 'bold',
     marginTop: 10
+  },
+  usuarioMontoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 5,
+  },
+  usuarioNombre: {
+    flex: 1,
+    fontSize: 14,
+    marginRight: 10,
+  },
+  usuarioMonto: {
+    flex: 1,
+    borderColor: 'slategray',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
   }
+
 });

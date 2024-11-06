@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Text, StyleSheet, View, ScrollView } from 'react-native';
+import { Text, StyleSheet, View, ScrollView, RefreshControl } from 'react-native';
 import appFirebase from '../credenciales';
-import { getFirestore, collection, getDocs, query, where, doc, getDoc,documentId } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, documentId } from 'firebase/firestore';
 import { ListItem } from "@rneui/themed";
 import { getAuth } from "firebase/auth";
 
@@ -9,8 +9,9 @@ const db = getFirestore(appFirebase);
 
 export default function Eventos(props) {
     const [lista, setLista] = useState([]);
-    const [userId, setUserId] = useState(null); 
+    const [userId, setUserId] = useState(null);
     const [deudas, setDeudas] = useState([]); // Para almacenar las deudas del usuario
+    const [refreshing, setRefreshing] = useState(false); // Estado para controlar el refresco
 
     // Obtener ID del usuario actual
     useEffect(() => {
@@ -23,41 +24,42 @@ export default function Eventos(props) {
             console.log("No hay usuario autenticado");
         }
     }, []);
-    
 
+    // Recuperar las deudas del usuario
+    const getDeudas = async () => {
+        if (userId) {
+            try {
+                console.log("Obteniendo las deudas para el usuario:", userId);
+                const usuarioRef = doc(db, 'usuarios', userId);
+                const usuarioDoc = await getDoc(usuarioRef);
 
-    useEffect(() => {
-        const getDeudas = async () => {
-            if (userId) { 
-                try {
-                    const usuarioRef = doc(db, 'usuarios', userId); 
-                    const usuarioDoc = await getDoc(usuarioRef); 
-
-                    if (usuarioDoc.exists()) {
-                        const data = usuarioDoc.data();
-                        const deudas = data.deudas || []; // Obtiene la lista de deudas
-                        console.log("Deudas de el usuario:", deudas); // muestra los id de los eventos en consola, ayuda a la hora de probar el codigo, no se muestra en la app
-                        setDeudas(deudas); // Guarda las deudas en el estado
-                    } else {
-                        console.log("El documento del usuario no existe.");
-                    }
-                } catch (error) {
-                    console.log("Error al obtener los eventos de la lista deudas:", error);
+                if (usuarioDoc.exists()) {
+                    const data = usuarioDoc.data();
+                    const deudas = data.deudas || []; // Obtiene la lista de deudas
+                    console.log("Deudas del usuario:", deudas); // Verifica las deudas
+                    setDeudas(deudas); // Guarda las deudas en el estado
+                } else {
+                    console.log("El documento del usuario no existe.");
                 }
+            } catch (error) {
+                console.log("Error al obtener las deudas:", error);
             }
-        };
+        }
+    };
 
-        getDeudas();
-    }, [userId]);
+    // Obtener los eventos basados en las deudas del usuario
+    useEffect(() => {
+        getDeudas(); 
+    }, [userId]); // Ejecuta cuando el userId cambia
 
-
+    // Obtener la lista de eventos basados en las deudas del usuario
     useEffect(() => {
         const getListaEventos = async () => {
-            if (deudas.length > 0) { // Solo ejecuta si hay eventos creados
+            if (deudas.length > 0) { // Solo ejecuta si hay deudas
                 try {
                     const eventosRef = collection(db, 'eventos');
-                    // Verifica si eventosCreados contiene elementos válidos
-                    const eventosValidos = deudas.filter(id => id); 
+                    // Verifica si deudas contiene elementos válidos
+                    const eventosValidos = deudas.filter(id => id);
                     console.log("Eventos válidos para la consulta:", eventosValidos);
 
                     if (eventosValidos.length > 0) {
@@ -66,7 +68,7 @@ export default function Eventos(props) {
                         const querySnapshot = await getDocs(eventosQuery);
                         const docs = [];
                         querySnapshot.forEach((doc) => {
-                            const { titulo, detalle, monto, cantidadParticipantes,usuarios, fecha } = doc.data();
+                            const { titulo, detalle, monto, cantidadParticipantes, usuarios, fecha } = doc.data();
                             docs.push({
                                 id: doc.id,
                                 titulo,
@@ -86,19 +88,33 @@ export default function Eventos(props) {
                     console.log("Error al obtener la lista de eventos:", error);
                 }
             } else {
-                console.log("No hay eventos creados para mostrar.");
+                console.log("No hay eventos disponibles para mostrar.");
             }
         };
 
         getListaEventos();
-    }, [deudas]); 
+    }, [deudas]); // Se ejecuta cuando las deudas cambian
+
+    const onRefresh = async () => {
+        setRefreshing(true); // Inicia el refresco
+        await getDeudas(); // Recarga las deudas cuando se haga el refresh
+        setRefreshing(false); // Termina el refresco
+    };
 
     return (
-        <ScrollView>
+        <ScrollView
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
             <View style={styles.contenedor}>
-                {lista.length > 0 ? ( 
+                {lista.length > 0 ? (
                     lista.map((even) => (
-                        <ListItem bottomDivider key={even.id} onPress={() => { props.navigation.navigate('DetallesDeudas', { eventoId: even.id }) }}>
+                        <ListItem
+                            bottomDivider
+                            key={even.id}
+                            onPress={() => {
+                                props.navigation.navigate('DetallesDeudas', { eventoId: even.id });
+                            }}
+                        >
                             <ListItem.Content>
                                 <ListItem.Title style={styles.titulo}>{even.titulo}</ListItem.Title>
                                 <ListItem.Subtitle>{even.fecha}</ListItem.Subtitle>
@@ -106,7 +122,7 @@ export default function Eventos(props) {
                         </ListItem>
                     ))
                 ) : (
-                    <Text>No hay eventos disponibles.</Text> // Mensaje alternativo
+                    <Text>No hay eventos disponibles.</Text>
                 )}
             </View>
         </ScrollView>
