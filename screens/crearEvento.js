@@ -55,6 +55,7 @@ export default function CrearEvento(props) {
                     fecha: fecha,
                     cantidadParticipantes: parseInt(estado.cantidadParticipantes, 10),
                     monto: parseInt(estado.monto, 10),
+                    
                 };
                 
                 // Añade el evento y obtiene su ID
