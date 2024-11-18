@@ -120,7 +120,7 @@ export default function DetallesEvento(props) {
                 setNombreUsuario('');
               }
             }
-            if (usuariosEnEvento.length > evento.cantidadParticipantes){
+            if (usuariosEnEvento.length >= evento.cantidadParticipantes){
               ToastAndroid.show('No puede agregar más usuarios a este evento', ToastAndroid.SHORT)
             }
           } else {
