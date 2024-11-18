@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc,deleteDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
 import { KeyboardAvoidingView } from 'react-native';
 import { ScrollView } from 'react-native';
 import { Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Qr from './generarQr'
 
 const db = getFirestore(appFirebase);
 
@@ -14,6 +16,9 @@ export default function DetallesEvento(props) {
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
   const [montosEditados, setMontosEditados] = useState({}); 
+  const [mostrarQr, setMostrarQr] = useState(false);
+ const [modalVisible, setModalVisible] =useState(false);
+
 
 
   const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
@@ -109,7 +114,7 @@ export default function DetallesEvento(props) {
                 // Agregar al estado de usuarios para mostrarlo en la UI
                 setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId, montoApagar }]);
   
-                ToastAndroid.show('añadido al evento y el evento se agregó a sus deudas.',ToastAndroid.SHORT);
+                ToastAndroid.show('Añadido al evento y el evento se agregó a sus deudas.',ToastAndroid.SHORT);
   
                 // Vaciar el campo del TextInput después de añadir el usuario
                 setNombreUsuario('');
@@ -131,6 +136,15 @@ export default function DetallesEvento(props) {
     }
   };
   
+  const generarQr = async () => {
+    try {
+      setModalVisible(true)
+      setMostrarQr(true); 
+      console.log(eventoId);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     getOneEvento(eventoId);
@@ -199,13 +213,35 @@ const deleteEvento = async (id) => {
               onChangeText={(text) => setNombreUsuario(text)} // Actualiza el valor ingresado
             />
           </View>
-          <View style={styles.column}>
+          
+          <View style={styles.row2}>
+            
+            <View style={styles.column2}>
+            
             <Text></Text>
             <TouchableOpacity style={styles.botonAñadir} onPress={agregarUsuarioAlEvento}>
-              <Text style={styles.textoEliminar}>Añadir</Text>
+              <Text style={styles.textoEliminar}><Ionicons size={20} name="person-add-outline"/></Text>
+              {mostrarQr && <Qr idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}{mostrarQr && <Qr  idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}
             </TouchableOpacity>
-          </View>
+
+            
+
+            
+            </View>
+            <View style={styles.column2}>
+            <Text></Text>
+            <TouchableOpacity style={styles.botonQr} onPress={generarQr}>
+              <Text style={styles.textoEliminar}><Ionicons size={20} name="qr-code-outline"/></Text>
+           </TouchableOpacity>
+
+            </View>
+            </View>
+
         </View>
+        
+
         <Text style={styles.texto}>Usuarios añadidos:</Text>
         
         <View style={styles.textoContendor}>
@@ -273,14 +309,28 @@ const styles = StyleSheet.create({
     marginRight: 20,
     marginTop: 20
   },
+  column2: {
+    width: '35%' 
+  },
+  row2: {
+    flexDirection: 'row',
+    
+  },
   botonAñadir: {
     backgroundColor: '#525FE1',
     borderColor: '#525FE1',
     borderWidth: 3,
     borderRadius: 20,
-    marginLeft: 10,
-    marginRight: 20,
-    marginTop: 25
+    marginHorizontal: 10, 
+    marginTop: 25,
+  },
+  botonQr: {
+    backgroundColor: '#525FE1',
+    borderColor: '#525FE1',
+    borderWidth: 3,
+    borderRadius: 20,
+    marginHorizontal: 10, 
+    marginTop: 25,
   },
   textoEliminar: {
     textAlign: 'center',
