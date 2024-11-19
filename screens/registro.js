@@ -25,7 +25,10 @@ export default function CrearUsuario(props) {
 
     const [user, setUser] = useState(initialUserState);
 
-    const simbolosNoPermitidos =/[ ! " # $ % & ' ( ) * + , -  / : ; < = > ? @  ^  |   ]/ // lista de símbolos no permitidos
+    const simbolosNoPermitidos =/[: ; " ' < > / | - * { } ]/ // lista de símbolos no permitidos
+    const simbolosPermitidos =/[! @ # $ % ^ &  _  + = ~ , ? ]/ //Lista con los simbolos permitidos
+    const numeros=/[ 0 1 2 3 4 5 6 7 8 9]/ //lista con los numeros usados para validar la contraseña
+    
 
     const handleChangeText = (value, name) => {
         setUser({ ...user, [name]: value });
@@ -42,9 +45,16 @@ export default function CrearUsuario(props) {
                 return;
             }
 
+            const querySnapshot = await getDocs(collection(db, 'usuarios'));
+            const userExists = querySnapshot.docs.some(doc => doc.data().nombreUsuario === user.nombreUsuario);
+
+            if(userExists){
+                ToastAndroid.show("El nombre de usuario no esta disponible", ToastAndroid.SHORT)
+                return;
+            }
       
             if (simbolosNoPermitidos.test(user.password)) {
-                ToastAndroid.show('La contraseña solo puede tener letras y números.', ToastAndroid.SHORT);
+                ToastAndroid.show('Solo puede utilizar los simbolos permitidos', ToastAndroid.SHORT);
                 return;
             }
 
@@ -53,21 +63,37 @@ export default function CrearUsuario(props) {
                 return;
             }
 
-            // Registrar al usuario con Firebase Authentication
-            const userCredential = await createUserWithEmailAndPassword(auth, user.gmail, user.password);
-            const registeredUser = userCredential.user;
+            if(!simbolosPermitidos.test(user.password)){
+                ToastAndroid.show("La contraseña debe contener al meno un simbolo", ToastAndroid.SHORT)
+                return;
+            }
 
-            // Guardar datos adicionales del usuario en Firestore
-            await setDoc(doc(db, 'usuarios', registeredUser.uid), {
-                nombreUsuario: user.nombreUsuario,
-                gmail: user.gmail,
-                deudas: user.deudas,
-                eventosCreados: user.eventosCreados
-            });
+            if(!numeros.test(user.password)){
+                ToastAndroid.show("La contraseña debe incluir al menos un numero", ToastAndroid.SHORT)
+                return;
+            }
+
+            if(simbolosPermitidos.test(user.password) && user.password.length >= 6 && numeros.test(user.password)){
+                // Registrar al usuario con Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, user.gmail, user.password);
+                const registeredUser = userCredential.user;
+
+                // Guardar datos adicionales del usuario en Firestore
+                await setDoc(doc(db, 'usuarios', registeredUser.uid), {
+                    nombreUsuario: user.nombreUsuario,
+                    gmail: user.gmail,
+                    deudas: user.deudas,
+                    eventosCreados: user.eventosCreados
+                });
 
             ToastAndroid.show("Usuario registrado con exito", ToastAndroid.SHORT)
-            setUser(initialUserState); // Reiniciar el estado después de guardar
+            setUser(initialUserState); 
             props.navigation.navigate('Login');
+
+
+            };
+
+            
         } catch (error) {
             console.log(error);
             Alert.alert('Error', 'Hubo un problema al registrar el usuario');
@@ -121,7 +147,11 @@ export default function CrearUsuario(props) {
                     <Text style={styles.textoColor}>Requisitos para la contraseña:</Text>
                     <Text></Text>
                     <Text>* Longitud mínima de 6 caracteres</Text>
-                    <Text>* Solo puede tener letras y números</Text>
+                    <Text></Text>
+                    <Text>* La contraseña debe tener al menos un numero y un simbolo</Text>
+                    <Text></Text>
+                    <Text>* Simbolos permitidos:</Text>
+                    <Text>  ! @ # $ % ^ &  _  + = ~ , ?</Text>
                 </View>
 
                 <View style={styles.padreBoton}>
@@ -182,7 +212,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         paddingVertical: 20,
         width: 150,
-        marginTop: 20,
+        marginTop: 0,
     },
     textoBoton: {
         textAlign: 'center',
