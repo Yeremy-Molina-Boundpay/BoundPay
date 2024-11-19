@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
-import { TextInput } from 'react-native-gesture-handler';
+import { RefreshControl, ScrollView, TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
 
@@ -10,6 +10,7 @@ export default function DetallesDeudas(props) {
 
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
+  const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
 
   const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
 
@@ -71,10 +72,20 @@ const getUsuariosEnEvento = async (eventoId) => {
     getUsuariosEnEvento(eventoId); // Cargar usuarios cuando se carga el evento
   }, [eventoId]);
 
+  // Función onRefresh para el gesto recargar
+  const onRefresh = async () => {
+    setRefreshing(true); // Inicia el estado de refresco
+    await getOneEvento(eventoId); // Vuelve a cargar los detalles del evento
+    await getUsuariosEnEvento(eventoId); // Vuelve a cargar los usuarios del evento
+    setRefreshing(false); // Termina el estado de refresco
+};
+
  
 
   return (
-    <View>
+    <ScrollView refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
+    }>
       <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
@@ -100,7 +111,7 @@ const getUsuariosEnEvento = async (eventoId) => {
           <Text style={styles.textoEliminar}>Marcar como pagado</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

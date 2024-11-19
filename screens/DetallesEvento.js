@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
-import { TextInput } from 'react-native-gesture-handler';
+import { RefreshControl, TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc,deleteDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
 import { KeyboardAvoidingView } from 'react-native';
@@ -17,8 +17,8 @@ export default function DetallesEvento(props) {
   const [evento, setEvento] = useState({});
   const [montosEditados, setMontosEditados] = useState({}); 
   const [mostrarQr, setMostrarQr] = useState(false);
- const [modalVisible, setModalVisible] =useState(false);
-
+  const [modalVisible, setModalVisible] =useState(false);
+  const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
 
 
   const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
@@ -151,6 +151,13 @@ export default function DetallesEvento(props) {
     getUsuariosEnEvento(eventoId); // Carga usuarios cuando se carga el evento
   }, [eventoId]);
 
+  const onRefresh = async () => {
+    setRefreshing(true); // Inicia el estado de refresco
+    await getOneEvento(eventoId); // Recarga los detalles del evento
+    await getUsuariosEnEvento(eventoId); // Recarga los usuarios asociados al evento
+    setRefreshing(false); // Termina el estado de refresco
+  };
+
 const deleteEvento = async (id) => {
     await deleteDoc(doc(db, 'eventos', id));
     ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
@@ -186,7 +193,9 @@ const deleteEvento = async (id) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={100} 
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
+    }>
         <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
@@ -221,9 +230,7 @@ const deleteEvento = async (id) => {
             <Text></Text>
             <TouchableOpacity style={styles.botonAñadir} onPress={agregarUsuarioAlEvento}>
               <Text style={styles.textoEliminar}><Ionicons size={20} name="person-add-outline"/></Text>
-              {mostrarQr && <Qr idEvento={eventoId} modalVisible={modalVisible} 
-        setModalVisible={setModalVisible} />}{mostrarQr && <Qr  idEvento={eventoId} modalVisible={modalVisible} 
-        setModalVisible={setModalVisible} />}
+              
             </TouchableOpacity>
 
             
@@ -234,6 +241,9 @@ const deleteEvento = async (id) => {
             <Text></Text>
             <TouchableOpacity style={styles.botonQr} onPress={generarQr}>
               <Text style={styles.textoEliminar}><Ionicons size={20} name="qr-code-outline"/></Text>
+              {mostrarQr && <Qr idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}{mostrarQr && <Qr  idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}
            </TouchableOpacity>
 
             </View>
