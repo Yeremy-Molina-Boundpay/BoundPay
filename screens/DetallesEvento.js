@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
-import { RefreshControl, TextInput } from 'react-native-gesture-handler';
+import { TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc,deleteDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
 import { KeyboardAvoidingView } from 'react-native';
@@ -17,8 +17,8 @@ export default function DetallesEvento(props) {
   const [evento, setEvento] = useState({});
   const [montosEditados, setMontosEditados] = useState({}); 
   const [mostrarQr, setMostrarQr] = useState(false);
-  const [modalVisible, setModalVisible] =useState(false);
-  const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
+ const [modalVisible, setModalVisible] =useState(false);
+
 
 
   const eventoId = props.route.params.eventoId; // Obtiene el ID del evento actual desde los parámetros de navegación
@@ -120,7 +120,7 @@ export default function DetallesEvento(props) {
                 setNombreUsuario('');
               }
             }
-            if (usuariosEnEvento.length >= evento.cantidadParticipantes){
+            if (usuariosEnEvento.length > evento.cantidadParticipantes){
               ToastAndroid.show('No puede agregar más usuarios a este evento', ToastAndroid.SHORT)
             }
           } else {
@@ -151,35 +151,86 @@ export default function DetallesEvento(props) {
     getUsuariosEnEvento(eventoId); // Carga usuarios cuando se carga el evento
   }, [eventoId]);
 
-  const onRefresh = async () => {
-    setRefreshing(true); // Inicia el estado de refresco
-    await getOneEvento(eventoId); // Recarga los detalles del evento
-    await getUsuariosEnEvento(eventoId); // Recarga los usuarios asociados al evento
-    setRefreshing(false); // Termina el estado de refresco
-  };
-
 const deleteEvento = async (id) => {
-    await deleteDoc(doc(db, 'eventos', id));
-    ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
-    props.navigation.navigate('EventosCreados');
+  const mostrarAlerta = () => {
+    Alert.alert(
+      "¿Quieres finalizar el evento?", 
+      " ",
+      "Confirma si deseas finalizar el evento", 
+      [
+        {
+          text: "Cancelar",
+          onPress: () => {
+            console.log("Acción cancelada");
+            
+          },
+          style: "cancel",
+        },
+        {
+          text: "Confirmar", 
+          onPress: () => {
+            
+            const confirmarAccion = true;
+            if (confirmarAccion) {
+               deleteDoc(doc(db, 'eventos', id));
+              ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
+              props.navigation.navigate('EventosCreados');
+              
+            } else {
+              console.log("El usuario no ha confirmado");
+            }
+          },
+        },
+      ]
+    );
   };
-  // Función para asignar los montos personalizados y actualizarlos en la base de datos
+    mostrarAlerta();
+  };
+  // Función para asignar los montos personalizados 
   const asignarMonto = async () => {
     try {
       const eventoRef = doc(db, 'eventos', eventoId);
       const eventoDoc = await getDoc(eventoRef);
-
+  
       if (eventoDoc.exists()) {
+        const eventoData = eventoDoc.data();
+        const montoTotal = eventoData.monto; 
+  
+        
+        const sumaMontos = usuarios.reduce((suma, usuario) => {
+          const montoEditado = montosEditados[usuario.id] || usuario.montoApagar;
+          return suma + parseFloat(montoEditado); 
+        }, 0);
+  
+        
+        if (sumaMontos < montoTotal) {
+          Alert.alert(
+            'Error',
+            `La deuda total es: $${montoTotal} y solo se ingreso: $${sumaMontos}, debes añadir más dinero.`
+          );
+          return;
+        }
+        if (sumaMontos > montoTotal) {
+          Alert.alert(
+            'Error',
+            `La deuda total es: $${montoTotal} y se ingreso: $${sumaMontos}, debes quitar dinero.`
+          );
+          return;
+        }
+        if(sumaMontos==montoTotal){
+          // Actualiza los usuarios con los nuevos montos
         const usuariosActualizados = usuarios.map((usuario) => ({
           id: usuario.id,
           montoApagar: montosEditados[usuario.id] || usuario.montoApagar,
         }));
-
+  
         await updateDoc(eventoRef, { usuarios: usuariosActualizados });
-
-        Alert.alert('Éxito', 'Montos actualizados correctamente');
-        getUsuariosEnEvento(eventoId); // Recarga usuarios después de actualizar
+  
+        ToastAndroid.show("Se han actualizado correctamente los montos.", ToastAndroid.SHORT)
+        getUsuariosEnEvento(eventoId); 
       }
+        }
+        
     } catch (error) {
       console.error('Error al actualizar los montos:', error);
       Alert.alert('Error', 'Ocurrió un error al actualizar los montos.');
@@ -193,9 +244,7 @@ const deleteEvento = async (id) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={100} 
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
-    }>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
@@ -230,7 +279,9 @@ const deleteEvento = async (id) => {
             <Text></Text>
             <TouchableOpacity style={styles.botonAñadir} onPress={agregarUsuarioAlEvento}>
               <Text style={styles.textoEliminar}><Ionicons size={20} name="person-add-outline"/></Text>
-              
+              {mostrarQr && <Qr idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}{mostrarQr && <Qr  idEvento={eventoId} modalVisible={modalVisible} 
+        setModalVisible={setModalVisible} />}
             </TouchableOpacity>
 
             
@@ -241,9 +292,6 @@ const deleteEvento = async (id) => {
             <Text></Text>
             <TouchableOpacity style={styles.botonQr} onPress={generarQr}>
               <Text style={styles.textoEliminar}><Ionicons size={20} name="qr-code-outline"/></Text>
-              {mostrarQr && <Qr idEvento={eventoId} modalVisible={modalVisible} 
-        setModalVisible={setModalVisible} />}{mostrarQr && <Qr  idEvento={eventoId} modalVisible={modalVisible} 
-        setModalVisible={setModalVisible} />}
            </TouchableOpacity>
 
             </View>
@@ -265,7 +313,7 @@ const deleteEvento = async (id) => {
               value={montosEditados[usuario.id]?.toString() || (isNaN(usuario.montoApagar) ? '' : usuario.montoApagar.toString())}  // Evitar NaN
                   onChangeText={(text) => {
                     const monto = text.trim();
-                    if (monto === '' || !isNaN(monto)) {  // Aceptar vacío o valores numéricos
+                    if (monto === '' || !isNaN(monto)) { 
                       setMontosEditados({ ...montosEditados, [usuario.id]: monto === '' ? 0 : parseFloat(monto) });
                     }
                   }}

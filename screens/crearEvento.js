@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     textoInput: {
         borderColor: 'slategray',
         borderWidth: 1,
-        padding: 2,
+        padding: 10,
         marginTop: 10,
         borderRadius: 8
     },
@@ -222,7 +222,8 @@ const styles = StyleSheet.create({
     subtitle: {
         color: 'white',
         fontSize: 18,
-        textAlign: 'center'
+        textAlign: 'center',
+        marginTop: 5
     },
     botonEnviar: {
         backgroundColor: '#525FE1',
