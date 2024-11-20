@@ -3,6 +3,10 @@ import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import { RefreshControl, ScrollView, TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
+import { getAuth } from 'firebase/auth';
+
+const auth = getAuth(appFirebase)
+const usuarioId = auth.currentUser
 
 const db = getFirestore(appFirebase);
 
@@ -33,7 +37,8 @@ const getUsuariosEnEvento = async (eventoId) => {
             return { 
               id: usuarioData.id,
               nombreUsuario: usuarioDoc.data().nombreUsuario,
-              montoApagar: usuarioData.montoApagar 
+              montoApagar: usuarioData.montoApagar,
+              estadoPago: usuarioData.estadoPago
             };
           }
         })
@@ -46,6 +51,48 @@ const getUsuariosEnEvento = async (eventoId) => {
   }
 };
 
+const notificarPago= async()=>{
+    const notificarPagos = async () => {
+      Alert.alert(
+        "¿Quieres notificar tu pago?",
+        "Confirma si deseas hacerlo.",
+        [
+          {
+            text: "Cancelar",
+            onPress: () => console.log("Acción cancelada"),
+            style: "cancel",
+          },
+          {
+            text: "Confirmar",
+            onPress: async () => {
+              try {
+                const usuarioId = auth.currentUser.uid;
+                const eventoRef = doc(db, 'eventos', eventoId);
+                const eventoDoc = await getDoc(eventoRef);
+    
+                if (!eventoDoc.exists()) {
+                  console.error('El evento no existe');
+                  return;
+                }
+    
+                const usuariosEnEvento = eventoDoc.data().usuarios || [];
+                const usuariosActualizados = usuariosEnEvento.map((usuario) =>
+                  usuario.id === usuarioId ? { ...usuario, estadoPago: "Pago notificado" } : usuario
+                );
+    
+                await updateDoc(eventoRef, { usuarios: usuariosActualizados });
+    
+                console.log('Pago notificado correctamente');
+              } catch (error) {
+                console.error('Error al notificar el pago:', error);
+              }
+            },
+          },
+        ]
+      );
+    };
+    notificarPagos();
+}
 
 
 
@@ -97,17 +144,18 @@ const getUsuariosEnEvento = async (eventoId) => {
           <Text style={styles.texto}>Monto total:</Text>
           <Text style={styles.textoContendor}>{evento.monto}</Text>
         </View>
+          
         
         <Text style={styles.texto}>Usuarios añadidos:</Text>
         <View style={styles.textoContendor}>
           
           {usuarios.map((usuario, index) => (
             <Text key={index} style={styles.textoContendor}>
-              {usuario.nombreUsuario} : ${usuario.montoApagar}
+              {usuario.nombreUsuario} : ${usuario.montoApagar} - {usuario.estadoPago}
             </Text>
           ))}
         </View>  
-        <TouchableOpacity style={styles.botonEliminar} onPress={() => deleteEvento(eventoId)}>
+        <TouchableOpacity style={styles.botonEliminar} onPress={() => notificarPago() }>
           <Text style={styles.textoEliminar}>Marcar como pagado</Text>
         </TouchableOpacity>
       </View>

@@ -50,7 +50,7 @@ export default function Eventos(props) {
     // Obtener los eventos basados en las deudas del usuario
     useEffect(() => {
         getDeudas(); 
-    }, [userId]); // Ejecuta cuando el userId cambia
+    }, [userId]); 
 
     // Obtener la lista de eventos basados en las deudas del usuario
     useEffect(() => {
@@ -69,6 +69,9 @@ export default function Eventos(props) {
                         const docs = [];
                         querySnapshot.forEach((doc) => {
                             const { titulo, detalle, monto, cantidadParticipantes, usuarios, fecha } = doc.data();
+                            const usuarioActualId = userId
+                            const usuarioActual = usuarios.find((usuario) => usuario.id === usuarioActualId);
+                            const estadoPago = usuarioActual ? usuarioActual.estadoPago : "Desconocido";
                             docs.push({
                                 id: doc.id,
                                 titulo,
@@ -76,7 +79,8 @@ export default function Eventos(props) {
                                 monto,
                                 cantidadParticipantes,
                                 usuarios,
-                                fecha
+                                fecha,
+                                estadoPagoUsuarioActual: estadoPago
                             });
                         });
                         console.log("Eventos obtenidos:", docs); // Muestra los eventos obtenidos en la consola
@@ -106,24 +110,26 @@ export default function Eventos(props) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
             <View style={styles.contenedor}>
+                
                 {lista.length > 0 ? (
-                    lista.map((even) => (
-                        <ListItem
-                            bottomDivider
-                            key={even.id}
-                            onPress={() => {
-                                props.navigation.navigate('DetallesDeudas', { eventoId: even.id });
-                            }}
-                        >
-                            <ListItem.Content>
-                                <ListItem.Title style={styles.titulo}>{even.titulo}</ListItem.Title>
-                                <ListItem.Subtitle>{even.fecha}</ListItem.Subtitle>
-                            </ListItem.Content>
-                        </ListItem>
-                    ))
-                ) : (
-                    <Text>No hay eventos disponibles.</Text>
-                )}
+                lista.map((even) => (
+                    <ListItem
+                        bottomDivider
+                        key={even.id}
+                        onPress={() => {
+                            props.navigation.navigate('DetallesDeudas', { eventoId: even.id });
+                        }}
+                    >
+                        <ListItem.Content>
+                            <ListItem.Title style={styles.titulo}>{even.titulo}</ListItem.Title>
+                            <ListItem.Subtitle>Estado de pago: {even.estadoPagoUsuarioActual}</ListItem.Subtitle>
+                            <ListItem.Subtitle>Fecha: {even.fecha}</ListItem.Subtitle>
+                        </ListItem.Content>
+                    </ListItem>
+                ))
+            ) : (
+                <Text>No hay eventos disponibles.</Text>
+            )}
             </View>
         </ScrollView>
     );
