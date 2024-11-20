@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
-
+import React, { useEffect } from "react";
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
@@ -10,10 +10,17 @@ import BarraNavegacion from './barraNavegacion';
 import DetallesEvento from './screens/DetallesEvento';
 import DetallesDeudas from './screens/detalleDeuda';
 import Logout from './screens/Logout';
+import SplashScreen from "react-native-splash-screen";
 
 
 
 export default function App() {
+  useEffect(() => {
+    
+    setTimeout(() => {
+        SplashScreen.hide();
+    }, 2000);
+}, []);
 
 const Stack = createStackNavigator();
 
