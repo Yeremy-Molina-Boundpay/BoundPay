@@ -22,7 +22,6 @@
     "firebase": "^10.14.1",
     "react": "18.2.0",
     "react-native": "0.74.5",
-    "react-native-check-box": "^2.1.7",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-permissions": "^5.1.0",
     "react-native-qrcode-svg": "^6.3.12",
