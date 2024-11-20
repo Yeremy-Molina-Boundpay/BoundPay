@@ -4,10 +4,11 @@ import { TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc,deleteDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
 import { KeyboardAvoidingView } from 'react-native';
-import { ScrollView } from 'react-native';
+import { ScrollView,RefreshControl } from 'react-native';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Qr from './generarQr'
+import CheckBox from 'react-native-check-box';
 
 const db = getFirestore(appFirebase);
 
@@ -16,8 +17,11 @@ export default function DetallesEvento(props) {
   const [usuarios, setUsuarios] = useState([]);
   const [evento, setEvento] = useState({});
   const [montosEditados, setMontosEditados] = useState({}); 
+  const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
   const [mostrarQr, setMostrarQr] = useState(false);
- const [modalVisible, setModalVisible] =useState(false);
+  const [modalVisible, setModalVisible] =useState(false);
+  const [checkStatus, setCheckStatus] = useState({});
+
 
 
 
@@ -30,8 +34,10 @@ export default function DetallesEvento(props) {
       const eventoDoc = await getDoc(eventoRef);
   
       if (eventoDoc.exists()) {
+        
         const usuariosEnEvento = eventoDoc.data().usuarios || [];
-  
+        
+        
         const usuariosData = await Promise.all(
           usuariosEnEvento.map(async (usuarioData) => {
             const usuarioRef = doc(db, 'usuarios', usuarioData.id);
@@ -40,7 +46,8 @@ export default function DetallesEvento(props) {
               return { 
                 id: usuarioData.id,
                 nombreUsuario: usuarioDoc.data().nombreUsuario,
-                montoApagar: usuarioData.montoApagar 
+                montoApagar: usuarioData.montoApagar,
+                estadoPago: usuarioData.estadoPago
               };
             }
           })
@@ -82,20 +89,23 @@ export default function DetallesEvento(props) {
           const usuarioId = docSnapshot.id;
           const usuarioNombre = docSnapshot.data().nombreUsuario;
           
+          
   
-          const montoApagar = evento.monto / evento.cantidadParticipantes;  
+          const montoApagar = Math.round(evento.monto / evento.cantidadParticipantes);
+          
 
           if (!usuarios.some((usuario) => usuario.id === usuarioId)) {
             const eventoRef = doc(db, 'eventos', eventoId);
             const eventoDoc = await getDoc(eventoRef);
+            const estadoPago="Pendiente"
             const usuariosEnEvento = eventoDoc.data().usuarios || [];  // Obtener usuarios ya existentes o un arreglo vacío
-  
+            
   
             if (eventoDoc.exists()&& usuariosEnEvento.length < evento.cantidadParticipantes) {
               
               // Añadir el usuario junto con el monto que debe pagar
               await updateDoc(eventoRef, {
-                usuarios: [...usuariosEnEvento, { id: usuarioId, montoApagar }]  // Guardamos el id y el montoApagar
+                usuarios: [...usuariosEnEvento, { id: usuarioId, montoApagar, estadoPago }]  // Guardamos el id y el montoApagar
               });
 
   
@@ -110,9 +120,9 @@ export default function DetallesEvento(props) {
                 await updateDoc(usuarioRef, {
                   deudas: [...deudas, eventoId]  // Añadir el evento a las deudas del usuario
                 });
-  
+                
                 // Agregar al estado de usuarios para mostrarlo en la UI
-                setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId, montoApagar }]);
+                setUsuarios([...usuarios, { nombreUsuario: usuarioNombre, id: usuarioId, montoApagar, estadoPago }]);
   
                 ToastAndroid.show('Añadido al evento y el evento se agregó a sus deudas.',ToastAndroid.SHORT);
   
@@ -120,7 +130,7 @@ export default function DetallesEvento(props) {
                 setNombreUsuario('');
               }
             }
-            if (usuariosEnEvento.length > evento.cantidadParticipantes){
+            if (usuariosEnEvento.length >= evento.cantidadParticipantes){
               ToastAndroid.show('No puede agregar más usuarios a este evento', ToastAndroid.SHORT)
             }
           } else {
@@ -151,39 +161,42 @@ export default function DetallesEvento(props) {
     getUsuariosEnEvento(eventoId); // Carga usuarios cuando se carga el evento
   }, [eventoId]);
 
-const deleteEvento = async (id) => {
-  const mostrarAlerta = () => {
-    Alert.alert(
-      "¿Quieres finalizar el evento?", 
-      " ",
-      "Confirma si deseas finalizar el evento", 
-      [
-        {
-          text: "Cancelar",
-          onPress: () => {
-            console.log("Acción cancelada");
-            
+  const onRefresh = async () => {
+    setRefreshing(true); // Inicia el estado de refresco
+    await getOneEvento(eventoId); // Vuelve a cargar los detalles del evento
+    await getUsuariosEnEvento(eventoId); // Vuelve a cargar los usuarios del evento
+    setRefreshing(false); // Termina el estado de refresco
+};
+
+  const deleteEvento = async (id) => {
+    const mostrarAlerta = () => {
+      Alert.alert(
+        "¿Quieres finalizar el evento?", 
+        " ",
+        [
+          {
+            text: "Cancelar",
+            onPress: () => console.log("Acción cancelada"),
+            style: "cancel",
           },
-          style: "cancel",
-        },
-        {
-          text: "Confirmar", 
-          onPress: () => {
-            
-            const confirmarAccion = true;
-            if (confirmarAccion) {
-               deleteDoc(doc(db, 'eventos', id));
-              ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
-              props.navigation.navigate('EventosCreados');
-              
-            } else {
-              console.log("El usuario no ha confirmado");
-            }
+          {
+            text: "Confirmar", 
+            onPress: async () => {
+              try {
+                // Aquí realmente eliminamos el evento
+                await deleteDoc(doc(db, 'eventos', id)); 
+                ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
+                props.navigation.navigate('EventosCreados'); // Redirige después de eliminar
+              } catch (error) {
+                console.error("Error al eliminar el evento: ", error);
+                ToastAndroid.show('Ocurrió un error al eliminar el evento', ToastAndroid.SHORT);
+              }
+            },
           },
-        },
-      ]
-    );
-  };
+        ]
+      );
+    };
+    
     mostrarAlerta();
   };
   // Función para asignar los montos personalizados 
@@ -236,15 +249,55 @@ const deleteEvento = async (id) => {
       Alert.alert('Error', 'Ocurrió un error al actualizar los montos.');
     }
   };
+  const handleCheckboxChange = async (usuarioId) => {
+    try {
+
+      const eventoRef = doc(db, 'eventos', eventoId);
+      
+      
+      const eventoDoc = await getDoc(eventoRef);
+      if (!eventoDoc.exists()) {
+        console.error('El evento no existe');
+        return;
+      }
+  
+      
+      const usuariosEnEvento = eventoDoc.data().usuarios || [];
+  
+     
+      const usuariosActualizados = usuariosEnEvento.map((usuario) =>
+        usuario.id === usuarioId 
+          ? { ...usuario, estadoPago: "Confirmado" } 
+          : usuario
+      );
+  
+     
+      await updateDoc(eventoRef, { usuarios: usuariosActualizados });
+      
+      
+      setUsuarios(usuariosActualizados);
+      setCheckStatus((prevStatus) => ({
+      ...prevStatus,
+      [usuarioId]: true,
+    }));
+  
+      console.log('Estado de pago actualizado correctamente');
+    } catch (error) {
+      console.error('Error al actualizar el estado de pago:', error);
+    }
+  };
 
 
     return (
+      <ScrollView refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
+        }>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={100} 
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        
         <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
@@ -300,39 +353,59 @@ const deleteEvento = async (id) => {
         </View>
         
 
-        <Text style={styles.texto}>Usuarios añadidos:</Text>
+            <Text style={styles.texto}>Usuarios añadidos:</Text>
+            
+            <View style={styles.textoContendor}>
+      {/* Encabezados */}
+      <View style={styles.encabezadosContainer}>
+        <Text style={styles.encabezado}>Nombre</Text>
+        <Text style={styles.encabezado}>Monto</Text>
+        <Text style={styles.encabezado}>Estado</Text>
+      </View>
+
+      {/* Lista de usuarios */}
+      {usuarios.map((usuario, index) => (
+        <View key={index} style={styles.usuarioMontoContainer}>
+          <Text style={styles.usuarioNombre}>{usuario.nombreUsuario}:</Text>
+          
+          <TextInput
+            style={styles.usuarioMonto}
+            placeholder={`$${usuario.montoApagar}`}
+            keyboardType="numeric"
+            value={montosEditados[usuario.id]?.toString() || (isNaN(usuario.montoApagar) ? '' : usuario.montoApagar.toString())}  // Evitar NaN
+            onChangeText={(text) => {
+              const monto = text.trim();
+              if (monto === '' || !isNaN(monto)) { 
+                setMontosEditados({ ...montosEditados, [usuario.id]: monto === '' ? 0 : parseFloat(monto) });
+              }
+            }}
+          />
+           <Text style={styles.usuarioEstado}>{usuario.estadoPago}</Text>
+           
+           <CheckBox
+          isChecked={checkStatus[usuario.id] || false}
+          onClick={() => handleCheckboxChange(usuario.id)}
+        />
+      
+            
         
-        <View style={styles.textoContendor}>
-        {usuarios.map((usuario, index) => (
-          <View key={index} style={styles.usuarioMontoContainer}>
-            <Text style={styles.usuarioNombre}>{usuario.nombreUsuario}:</Text>
-            <TextInput
-              style={styles.usuarioMonto}
-              placeholder={`$${usuario.montoApagar}`}
-              keyboardType="numeric"
-              value={montosEditados[usuario.id]?.toString() || (isNaN(usuario.montoApagar) ? '' : usuario.montoApagar.toString())}  // Evitar NaN
-                  onChangeText={(text) => {
-                    const monto = text.trim();
-                    if (monto === '' || !isNaN(monto)) { 
-                      setMontosEditados({ ...montosEditados, [usuario.id]: monto === '' ? 0 : parseFloat(monto) });
-                    }
-                  }}
-                />
-          </View>
-        ))}
-        
-        <TouchableOpacity style={styles.botonMonto} onPress={asignarMonto}>
-            <Text style={styles.textoEliminar}>Cambiar montos</Text>
-          </TouchableOpacity>
-        </View>  
+       
+        </View>
+      ))}
+
+      <TouchableOpacity style={styles.botonMonto} onPress={asignarMonto}>
+        <Text style={styles.textoEliminar}>Cambiar montos</Text>
+      </TouchableOpacity>
+    </View>
         
         <TouchableOpacity style={styles.botonEliminar} onPress={() => deleteEvento(eventoId)}>
           <Text style={styles.textoEliminar}>Finalizar evento</Text>
         </TouchableOpacity>
         
         </View>
-        </ScrollView>
+        
       </KeyboardAvoidingView>
+      </ScrollView>
     );
     
  
@@ -448,7 +521,14 @@ const styles = StyleSheet.create({
   usuarioNombre: {
     flex: 1,
     fontSize: 14,
+    marginLeft: 15,
     marginRight: 10,
+  },
+  usuarioEstado: {
+    flex: 1,
+    fontSize: 13,
+    marginLeft: 10,
+    color: 'black'
   },
   usuarioMonto: {
     flex: 1,
@@ -456,6 +536,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 8,
-  }
+  },
+  encabezadosContainer: {
+    flexDirection: 'row',  // Alinea los encabezados horizontalmente
+    justifyContent: 'space-between',  // Espacio entre los encabezados
+    marginBottom: 10,  // Espacio debajo de los encabezados
+  },
+  encabezado: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    flex: 1,  // Para que cada encabezado ocupe un espacio igual
+    textAlign: 'center',  // Centrado del texto
+  },
+  
 
 });
