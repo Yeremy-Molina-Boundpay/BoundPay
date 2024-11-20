@@ -9,6 +9,7 @@ import Registro from './screens/registro';
 import BarraNavegacion from './barraNavegacion';
 import DetallesEvento from './screens/DetallesEvento';
 import DetallesDeudas from './screens/detalleDeuda';
+import Logout from './screens/Logout';
 
 
 
@@ -31,6 +32,13 @@ function MyStack() {
         title:"Registro de usuario",
         headerTintColor:"white",
         headerTitleAlign:'center',
+        headerStyle: { backgroundColor: "#525FE1" },
+      }} />
+      <Stack.Screen name="CerrarSesion" component={Logout}
+      options={{
+        title: "Cerrar Sesión",
+        headerTintColor: "white",
+        headerTitleAlign: 'center',
         headerStyle: { backgroundColor: "#525FE1" },
       }} />
       <Stack.Screen name="Detalles" component={DetallesEvento}
