@@ -7,6 +7,7 @@ import Home from "./screens/Home";
 import QrScanner from "./screens/qrScanner";
 import CrearEvento from "./screens/crearEvento";
 import EventosCreados from "./screens/eventosCreados";
+import Logout from "./screens/Logout";
 
 
 
@@ -86,6 +87,19 @@ const BarraNavegacion=()=>{ /*Este es el componente */
                         tabBarLabel: 'Crear Evento',
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="add-circle-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
+
+                <barraNavegacion.Screen
+                    name="CerrarSesion"
+                    component={Logout}
+                    options={{
+                        tabBarHideOnKeyboard: true,
+                        headerShown: false,
+                        tabBarLabel: 'Cerrar Sesión',
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="log-out-outline" color={color} size={size} />
                         ),
                     }}
                 />
