@@ -8,7 +8,7 @@ import { ScrollView,RefreshControl } from 'react-native';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Qr from './generarQr'
-import CheckBox from 'react-native-check-box';
+
 
 const db = getFirestore(appFirebase);
 
@@ -20,7 +20,7 @@ export default function DetallesEvento(props) {
   const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
   const [mostrarQr, setMostrarQr] = useState(false);
   const [modalVisible, setModalVisible] =useState(false);
-  const [checkStatus, setCheckStatus] = useState({});
+ 
 
 
 
@@ -249,55 +249,62 @@ export default function DetallesEvento(props) {
       Alert.alert('Error', 'Ocurrió un error al actualizar los montos.');
     }
   };
-  const handleCheckboxChange = async (usuarioId) => {
-    try {
 
-      const eventoRef = doc(db, 'eventos', eventoId);
-      
-      
-      const eventoDoc = await getDoc(eventoRef);
-      if (!eventoDoc.exists()) {
-        console.error('El evento no existe');
-        return;
-      }
-  
-      
-      const usuariosEnEvento = eventoDoc.data().usuarios || [];
-  
-     
-      const usuariosActualizados = usuariosEnEvento.map((usuario) =>
-        usuario.id === usuarioId 
-          ? { ...usuario, estadoPago: "Confirmado" } 
-          : usuario
+  const cambiarPago= async(id)=>{
+    const confirmarPagos = async () => {
+      Alert.alert(
+        "¿Quieres confirmar el pago?",
+        "Confirma si deseas hacerlo.",
+        [
+          {
+            text: "Cancelar",
+            onPress: () => console.log("Acción cancelada"),
+            style: "cancel",
+          },
+          {
+            text: "Confirmar",
+            onPress: async () => {
+              try {
+                const usuarioId = id
+                const eventoRef = doc(db, 'eventos', eventoId);
+                const eventoDoc = await getDoc(eventoRef);
+    
+                if (!eventoDoc.exists()) {
+                  console.error('El evento no existe');
+                  return;
+                }
+    
+                const usuariosEnEvento = eventoDoc.data().usuarios || [];
+                const usuariosActualizados = usuariosEnEvento.map((usuario) =>
+                  usuario.id === usuarioId ? { ...usuario, estadoPago: "Confirmado" } : usuario
+                );
+    
+                await updateDoc(eventoRef, { usuarios: usuariosActualizados });
+    
+                console.log('Pago confirmado correctamente');
+              } catch (error) {
+                console.error('Error al confirmarel pago:', error);
+              }
+            },
+          },
+        ]
       );
+    };
+   confirmarPagos()
+}
   
-     
-      await updateDoc(eventoRef, { usuarios: usuariosActualizados });
-      
-      
-      setUsuarios(usuariosActualizados);
-      setCheckStatus((prevStatus) => ({
-      ...prevStatus,
-      [usuarioId]: true,
-    }));
-  
-      console.log('Estado de pago actualizado correctamente');
-    } catch (error) {
-      console.error('Error al actualizar el estado de pago:', error);
-    }
-  };
 
 
     return (
-      <ScrollView refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
-        }>
+      
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={100} 
       >
-        
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
+    }>
         <View style={styles.contenedor}>
         <Text style={styles.textoTitulo}>{evento.titulo}</Text>
         <Text style={styles.texto}>Descripcion:</Text>
@@ -356,12 +363,7 @@ export default function DetallesEvento(props) {
             <Text style={styles.texto}>Usuarios añadidos:</Text>
             
             <View style={styles.textoContendor}>
-      {/* Encabezados */}
-      <View style={styles.encabezadosContainer}>
-        <Text style={styles.encabezado}>Nombre</Text>
-        <Text style={styles.encabezado}>Monto</Text>
-        <Text style={styles.encabezado}>Estado</Text>
-      </View>
+     
 
       {/* Lista de usuarios */}
       {usuarios.map((usuario, index) => (
@@ -381,12 +383,10 @@ export default function DetallesEvento(props) {
             }}
           />
            <Text style={styles.usuarioEstado}>{usuario.estadoPago}</Text>
+           <TouchableOpacity style={styles.botonPago} onPress={()=>cambiarPago(usuario.id)}>
+          <Text style={styles.textoEliminar}><Ionicons size={20} name="checkbox-outline"/></Text>
+          </TouchableOpacity>
            
-           <CheckBox
-          isChecked={checkStatus[usuario.id] || false}
-          onClick={() => handleCheckboxChange(usuario.id)}
-        />
-      
             
         
        
@@ -403,9 +403,9 @@ export default function DetallesEvento(props) {
         </TouchableOpacity>
         
         </View>
-        
+        </ScrollView>
       </KeyboardAvoidingView>
-      </ScrollView>
+     
     );
     
  
@@ -520,9 +520,7 @@ const styles = StyleSheet.create({
   },
   usuarioNombre: {
     flex: 1,
-    fontSize: 14,
-    marginLeft: 15,
-    marginRight: 10,
+    fontSize: 14
   },
   usuarioEstado: {
     flex: 1,
@@ -537,17 +535,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
   },
-  encabezadosContainer: {
-    flexDirection: 'row',  // Alinea los encabezados horizontalmente
-    justifyContent: 'space-between',  // Espacio entre los encabezados
-    marginBottom: 10,  // Espacio debajo de los encabezados
-  },
-  encabezado: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    flex: 1,  // Para que cada encabezado ocupe un espacio igual
-    textAlign: 'center',  // Centrado del texto
-  },
+ 
+  
+  botonPago:{
+    backgroundColor: '#525FE1',
+    borderColor: '#525FE1',
+    width:'15%',
+    height:'100%',
+    borderWidth: 3,
+    borderRadius: 20
+  }
   
 
 });
