@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
-
+import React, { useEffect } from "react";
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
@@ -14,15 +14,16 @@ import Logout from './screens/Logout';
 
 
 export default function App() {
+  
 
 const Stack = createStackNavigator();
 
 function MyStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator >
       <Stack.Screen name="Login" component={Login}
       options={{
-        title:"Inicio de sesion",
+        headerShown: false,
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },
