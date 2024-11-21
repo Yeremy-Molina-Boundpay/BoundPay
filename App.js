@@ -10,26 +10,20 @@ import BarraNavegacion from './barraNavegacion';
 import DetallesEvento from './screens/DetallesEvento';
 import DetallesDeudas from './screens/detalleDeuda';
 import Logout from './screens/Logout';
-import SplashScreen from "react-native-splash-screen";
 
 
 
 export default function App() {
-  useEffect(() => {
-    
-    setTimeout(() => {
-        SplashScreen.hide();
-    }, 2000);
-}, []);
+  
 
 const Stack = createStackNavigator();
 
 function MyStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator >
       <Stack.Screen name="Login" component={Login}
       options={{
-        title:"Inicio de sesion",
+        headerShown: false,
         headerTintColor:"white",
         headerTitleAlign:'center',
         headerStyle: { backgroundColor: "#525FE1" },

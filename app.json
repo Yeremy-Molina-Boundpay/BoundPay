@@ -4,16 +4,17 @@
     "slug": "BoundPay",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "permissions": [
-      "CAMERA"
-    ],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "permissions": [
+      "CAMERA"
+    ],
+    
     "ios": {
       "supportsTablet": true
     },

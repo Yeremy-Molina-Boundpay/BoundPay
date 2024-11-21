@@ -13,6 +13,7 @@ import Logout from "./screens/Logout";
 
 
 const BarraNavegacion=()=>{ /*Este es el componente */
+    
         const barraNavegacion = createBottomTabNavigator();
         const colors = {
             primary: "#525FE1",

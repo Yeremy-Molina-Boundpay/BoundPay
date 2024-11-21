@@ -25,9 +25,9 @@ export default function CrearUsuario(props) {
 
     const [user, setUser] = useState(initialUserState);
 
-    const simbolosNoPermitidos =/[: ; " ' < > / | - * { } ]/ // lista de símbolos no permitidos
-    const simbolosPermitidos =/[! @ # $ % ^ &  _  + = ~ , ? ]/ //Lista con los simbolos permitidos
-    const numeros=/[ 0 1 2 3 4 5 6 7 8 9]/ //lista con los numeros usados para validar la contraseña
+    const simbolosNoPermitidos =/[:;"'<>/|-*{}]/ // lista de símbolos no permitidos
+    const simbolosPermitidos =/[!@#$%^& _+=~,?]/ //Lista con los simbolos permitidos
+    const numeros=/[0-9]/ 
     
 
     const handleChangeText = (value, name) => {

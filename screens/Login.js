@@ -18,27 +18,27 @@ export default function Login(props){
     const [email, setEmail] = useState()
     const [password, setPassword] = useState()
     const [estado, setEstado] = useState("loading");
-    const [refreshing, setRefreshing] = useState(false); // Estado de refreshing
+    const [refreshing, setRefreshing] = useState(false); 
 
 
     async function fetchModoMantencion() {
         try {
-            const docRef = doc(db, "config", "mantencion"); // Ruta: config/mantencion
+            const docRef = doc(db, "config", "mantencion"); 
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
                 return docSnap.data().modoMantencion; // Devuelve el valor de modoMantencion
             } else {
                 console.log("El documento no existe");
-                return false; // Valor predeterminado si no existe
+                return false;
             }
         } catch (error) {
             console.error("Error al obtener modoMantencion:", error);
-            return false; // Valor predeterminado en caso de error
+            return false; 
         }
     }
 
-    // Función para verificar el modo de mantenimiento
+   
     const verificarModoMantencion = async () => {
         const isMantencion = await fetchModoMantencion();
         if (isMantencion) {
@@ -81,7 +81,10 @@ export default function Login(props){
 
     }
     if (estado === "loading") {
-        return <Text></Text>;
+        return <Image 
+        source={require('../assets/splash.png')} 
+        style={styles.image} 
+      />;
     }
     
     if (estado === "mantencion") {
@@ -221,5 +224,11 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         fontSize: 15,
         textAlign: 'center'
-      }
+      },
+      image: {
+        flex: 1, 
+        resizeMode: 'cover', 
+        width: '100%', 
+        height: '100%', 
+      },
 });
