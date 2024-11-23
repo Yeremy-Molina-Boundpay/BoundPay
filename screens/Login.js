@@ -1,8 +1,10 @@
 import React, { useState,useEffect } from "react";
 import { Text, StyleSheet, View, Image,ToastAndroid, TextInput, TouchableOpacity, Alert } from "react-native";
 import { auth } from "../credenciales";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import appFirebase from '../credenciales'
+
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { ScrollView,RefreshControl } from 'react-native';
 import {  signInWithEmailAndPassword,sendEmailVerification, initializeAuth, getReactNativePersistence } from "firebase/auth";
@@ -60,13 +62,25 @@ export default function Login(props){
 
     const login = async()=>{
         try {
-            await signInWithEmailAndPassword(auth, email, password)
+        
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            if(!user.emailVerified){
+            
+            Alert.alert("Error", "El usuario no esta verificado, Revise su correo.")
+
+            return
+            
+            }
             ToastAndroid.show('Sesion iniciada correctamente.', ToastAndroid.SHORT, ToastAndroid.BOTTOM);
             props.navigation.replace('barraNavegacion')
+
+           
         } catch (error) {
             console.log(error)
             Alert.alert("Error", "El usuario o la contraseña son incorrectos")
         }
+        
     }
 
     const registro=()=>{
@@ -136,7 +150,7 @@ export default function Login(props){
 
                     <View style={styles.container}>
                         <Text>¿No tienes una cuenta? </Text>
-                        <TouchableOpacity onPress={() => props.navigation.navigate('Registro')}>
+                        <TouchableOpacity  onPress={registro}>
                             <Text style={styles.link}>Regístrate aquí</Text>
                         </TouchableOpacity>
                     </View>
