@@ -183,10 +183,33 @@ export default function DetallesEvento(props) {
             text: "Confirmar", 
             onPress: async () => {
               try {
-                // Aquí realmente eliminamos el evento
+                const eventoRef = doc(db, 'eventos', eventoId);
+                const eventoDoc = await getDoc(eventoRef);
+    
+                if (!eventoDoc.exists()) {
+                  console.error('El evento no existe');
+                  return;
+                }
+                let contador=0;
+                const usuariosEnEvento = eventoDoc.data().usuarios || [];
+                usuariosEnEvento.map((usuario) =>{
+                  if(usuario.estadoPago!="Confirmado"){
+                    contador=+1
+                    
+                  }
+                  
+                });
+                if(contador!=0){
+                  ToastAndroid.show("Debes confirmar los pagos para finalizar", ToastAndroid.SHORT)
+                  return;
+                }else{
+                  // Aquí realmente eliminamos el evento
                 await deleteDoc(doc(db, 'eventos', id)); 
                 ToastAndroid.show('Evento eliminado correctamente', ToastAndroid.SHORT);
                 props.navigation.navigate('EventosCreados'); // Redirige después de eliminar
+                contador=0;
+                }
+                
               } catch (error) {
                 console.error("Error al eliminar el evento: ", error);
                 ToastAndroid.show('Ocurrió un error al eliminar el evento', ToastAndroid.SHORT);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, Alert, ToastAndroid } from 'react-native';
 import { RefreshControl, ScrollView, TextInput } from 'react-native-gesture-handler';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import appFirebase from '../credenciales';
@@ -76,8 +76,18 @@ const notificarPago= async()=>{
                 }
     
                 const usuariosEnEvento = eventoDoc.data().usuarios || [];
-                const usuariosActualizados = usuariosEnEvento.map((usuario) =>
-                  usuario.id === usuarioId ? { ...usuario, estadoPago: "Pago notificado" } : usuario
+                const usuariosActualizados = usuariosEnEvento.map((usuario) =>{
+                  if(usuario.id==usuarioId){
+                    if(usuario.estadoPago=="Pendiente"){
+                      return { ...usuario, estadoPago: "Pago notificado" };
+                    }else{
+                      ToastAndroid.show("El pago ya fue notificado previamente", ToastAndroid.SHORT)
+                      return usuario
+                    }
+                  }
+                  return usuario
+                }
+                  
                 );
     
                 await updateDoc(eventoRef, { usuarios: usuariosActualizados });

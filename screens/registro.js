@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAvoidingView, Platform, ToastAndroid } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+
 import { Text, StyleSheet, View, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { auth } from '../credenciales';
 
@@ -25,7 +26,7 @@ export default function CrearUsuario(props) {
 
     const [user, setUser] = useState(initialUserState);
 
-    const simbolosNoPermitidos =/[:;"'<>/|-*{}]/ // lista de símbolos no permitidos
+    const simbolosNoPermitidos =/[-:;"'<>/|*{}]/ // lista de símbolos no permitidos
     const simbolosPermitidos =/[!@#$%^& _+=~,?]/ //Lista con los simbolos permitidos
     const numeros=/[0-9]/ 
     
@@ -75,9 +76,9 @@ export default function CrearUsuario(props) {
 
             if(simbolosPermitidos.test(user.password) && user.password.length >= 6 && numeros.test(user.password)){
                 // Registrar al usuario con Firebase Authentication
-                const userCredential = await createUserWithEmailAndPassword(auth, user.gmail, user.password);
+                const userCredential = await createUserWithEmailAndPassword(auth, user.gmail, user.password)
                 const registeredUser = userCredential.user;
-
+                await sendEmailVerification(registeredUser)
                 // Guardar datos adicionales del usuario en Firestore
                 await setDoc(doc(db, 'usuarios', registeredUser.uid), {
                     nombreUsuario: user.nombreUsuario,
@@ -85,8 +86,9 @@ export default function CrearUsuario(props) {
                     deudas: user.deudas,
                     eventosCreados: user.eventosCreados
                 });
+                
 
-            ToastAndroid.show("Usuario registrado con exito", ToastAndroid.SHORT)
+            Alert.alert("Genial", "Todo salio bien, ahora debe verificar su correo.")
             setUser(initialUserState); 
             props.navigation.navigate('Login');
 
