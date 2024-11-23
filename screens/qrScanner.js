@@ -48,6 +48,7 @@ export default function QrScanner({ navigation }) {
       const userId = user.uid;
       const userName = user.displayName || 'Usuario';
       const usuariosEnEvento = evento.usuarios || [];
+      const estadoPago="Pendiente"
 
       // Validaciones basadas en el código por nombre
       if (usuariosEnEvento.some((usuario) => usuario.id === userId)) {
@@ -64,7 +65,7 @@ export default function QrScanner({ navigation }) {
 
       // Agregar el usuario al evento
       await updateDoc(eventoRef, {
-        usuarios: [...usuariosEnEvento, { id: userId, montoApagar }],
+        usuarios: [...usuariosEnEvento, { id: userId, montoApagar, estadoPago }],
       });
 
       // Actualizar las deudas del usuario
