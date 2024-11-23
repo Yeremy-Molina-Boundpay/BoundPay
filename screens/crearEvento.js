@@ -16,7 +16,6 @@ export default function CrearEvento(props) {
         monto: '',
         cantidadParticipantes: '',
         usuarios: [],
-        comprobantes: [],
     };
 
     const [date, setDate] = useState(new Date());
