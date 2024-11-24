@@ -258,6 +258,7 @@ export default function DetallesEvento(props) {
         const usuariosActualizados = usuarios.map((usuario) => ({
           id: usuario.id,
           montoApagar: montosEditados[usuario.id] || usuario.montoApagar,
+estadoPago: usuario.estadoPago,
         }));
   
         await updateDoc(eventoRef, { usuarios: usuariosActualizados });
