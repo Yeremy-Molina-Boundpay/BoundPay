@@ -14,6 +14,6 @@ Para poder usar la aplicacion desde el VS en necesario seguir los siguientes pas
 
 4.- Para usar la aplicacion en telefono descargar la app ExpoGo de la PlayStore y escanear al QR
 
-5.-Al correr la app pedira cuenta de expo, las credenciales deben ser facilitadas por el equipo
+5.- Al correr la app pedira cuenta de expo, las credenciales deben ser facilitadas por el equipo
 
 6.- Para crear el apk en la terminal command prompt usar el siguiente comando: `eas build -p android --profile preview`
